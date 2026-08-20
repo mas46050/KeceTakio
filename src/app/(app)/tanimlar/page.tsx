@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { requireSession, isAdmin } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
 import { redirect } from "next/navigation";
 import {
   createNamedAction,
@@ -18,7 +19,8 @@ export default async function DefinitionsPage({
   searchParams: Promise<{ ok?: string; hata?: string }>;
 }) {
   const s = await requireSession();
-  if (!isAdmin(s)) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20y%C3%B6netici%20yetkisi%20gerekir.");
+  const perms = await getPermSet(s.role);
+  if (!perms.has("islem_tanim")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
   const sp = await searchParams;
 
   const [reasons, manufacturers, suppliers] = await Promise.all([

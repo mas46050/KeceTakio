@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireSession, canOperate } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
+import { redirect } from "next/navigation";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { Flash, StatusBadge, TypeBadge } from "@/components/ui";
 import { STATUS_LABELS } from "@/lib/life";
@@ -13,6 +15,8 @@ export default async function ProductsPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const s = await requireSession();
+  const perms = await getPermSet(s.role);
+  if (!perms.has("sayfa_urunler")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const type = sp.tip === "ELEK" || sp.tip === "KECE" ? sp.tip : undefined;
@@ -45,7 +49,7 @@ export default async function ProductsPage({
       <Flash sp={sp} />
       <div className="page-head">
         <h1>Elek / Keçe Kartları</h1>
-        {canOperate(s) && (
+        {perms.has("islem_urun") && (
           <Link href="/urunler/yeni" className="btn primary">+ Yeni Kayıt / Stok Girişi</Link>
         )}
       </div>

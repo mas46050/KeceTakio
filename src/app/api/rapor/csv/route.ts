@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
 import { parseReportFilters, queryReportRows } from "@/lib/report";
 import { fmtDate } from "@/lib/format";
 
@@ -7,6 +8,8 @@ import { fmtDate } from "@/lib/format";
 export async function GET(req: NextRequest) {
   const s = await getSession();
   if (!s) return new NextResponse("Yetkisiz", { status: 401 });
+  const perms = await getPermSet(s.role);
+  if (!perms.has("sayfa_raporlar")) return new NextResponse("Yetkisiz", { status: 403 });
 
   const sp = Object.fromEntries(req.nextUrl.searchParams.entries());
   const rows = await queryReportRows(parseReportFilters(sp));

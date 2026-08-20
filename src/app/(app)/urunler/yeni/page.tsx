@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { requireSession, canOperate } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
 import { redirect } from "next/navigation";
 import { createProductAction } from "@/lib/actions";
 import ProductForm from "@/components/ProductForm";
@@ -13,7 +14,8 @@ export default async function NewProductPage({
   searchParams: Promise<{ ok?: string; hata?: string }>;
 }) {
   const s = await requireSession();
-  if (!canOperate(s)) redirect("/urunler?hata=Bu%20i%C5%9Flem%20i%C3%A7in%20yetkiniz%20yok.");
+  const perms = await getPermSet(s.role);
+  if (!perms.has("islem_urun")) redirect("/urunler?hata=Bu%20i%C5%9Flem%20i%C3%A7in%20yetkiniz%20yok.");
   const sp = await searchParams;
   const [positions, manufacturers, suppliers] = await Promise.all([
     prisma.position.findMany({

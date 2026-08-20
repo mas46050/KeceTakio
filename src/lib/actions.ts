@@ -9,11 +9,10 @@ import {
   destroySession,
   getSession,
   isAdmin,
-  canOperate,
-  canEnterTech,
   ROLE_LABELS,
   type Session,
 } from "./auth";
+import { getPermSet, CONFIGURED_MARKER, EDITABLE_ROLES, ALL_PERMS } from "./perm";
 import { parseDateInput } from "./format";
 import { calcLife } from "./life";
 
@@ -57,6 +56,14 @@ async function audit(
   await prisma.auditLog.create({
     data: { userId: s?.uid ?? null, action, entity, entityId: entityId ?? null, description },
   });
+}
+
+async function requirePerm(perm: string, back: string): Promise<Session> {
+  const s = await getSession();
+  if (!s) redirect("/login");
+  const perms = await getPermSet(s.role);
+  if (!perms.has(perm)) fail(back, "Bu işlem için yetkiniz yok.");
+  return s;
 }
 
 async function requireRole(check: (s: Session) => boolean, back: string): Promise<Session> {
@@ -169,7 +176,7 @@ function productDataFromForm(fd: FormData) {
 
 export async function createProductAction(fd: FormData) {
   const back = "/urunler/yeni";
-  const s = await requireRole(canOperate, back);
+  const s = await requirePerm("islem_urun", back);
   const type = str(fd, "type") === "ELEK" ? "ELEK" : "KECE";
   const data = productDataFromForm(fd);
   const manufacturerId = await resolveNamed("manufacturer", fd, "manufacturerId", "newManufacturer");
@@ -201,7 +208,7 @@ export async function createProductAction(fd: FormData) {
 
 export async function updateProductAction(id: number, fd: FormData) {
   const back = `/urunler/${id}/duzenle`;
-  const s = await requireRole(canOperate, back);
+  const s = await requirePerm("islem_urun", back);
   const data = productDataFromForm(fd);
   const manufacturerId = await resolveNamed("manufacturer", fd, "manufacturerId", "newManufacturer");
   const supplierId = await resolveNamed("supplier", fd, "supplierId", "newSupplier");
@@ -218,7 +225,7 @@ const MANUAL_STATUSES = ["STOKTA", "REZERVE", "TAMIRDE", "HURDA", "KULLANILMIS"]
 
 export async function setProductStatusAction(id: number, fd: FormData) {
   const back = `/urunler/${id}`;
-  const s = await requireRole(canOperate, back);
+  const s = await requirePerm("islem_urun", back);
   const status = str(fd, "status") as (typeof MANUAL_STATUSES)[number];
   if (!MANUAL_STATUSES.includes(status)) fail(back, "Geçersiz durum.");
   if (status === "HURDA" && !isAdmin(s)) fail(back, "Hurda kararı için yönetici yetkisi gerekir.");
@@ -251,7 +258,7 @@ export async function deleteProductAction(id: number) {
 
 export async function montajAction(fd: FormData) {
   const back = "/montaj";
-  const s = await requireRole(canOperate, back);
+  const s = await requirePerm("islem_montaj", back);
   const productId = int(fd, "productId");
   const positionId = int(fd, "positionId");
   const dateStr = str(fd, "installDate");
@@ -316,7 +323,7 @@ export async function montajAction(fd: FormData) {
 
 export async function sokumAction(installationId: number, fd: FormData) {
   const back = `/sokum/${installationId}`;
-  const s = await requireRole(canOperate, back);
+  const s = await requirePerm("islem_montaj", back);
   const inst = await prisma.installation.findFirst({
     where: { id: installationId, active: true },
     include: { product: true, position: true },
@@ -387,7 +394,7 @@ export async function addWashAction(installationId: number, fd: FormData) {
     include: { product: true, position: true },
   });
   const back = inst ? `/urunler/${inst.productId}` : "/";
-  const s = await requireRole(canEnterTech, back);
+  const s = await requirePerm("islem_yikama_olcum", back);
   if (!inst || !inst.active) fail(back, "Yıkama kaydı yalnızca makinedeki ürünler için eklenebilir.");
   const dateStr = str(fd, "washDate");
   if (!dateStr) fail(back, "Yıkama tarihi zorunludur.");
@@ -419,7 +426,7 @@ export async function addMeasurementAction(installationId: number, fd: FormData)
     include: { product: true, position: true },
   });
   const back = inst ? `/urunler/${inst.productId}` : "/";
-  const s = await requireRole(canEnterTech, back);
+  const s = await requirePerm("islem_yikama_olcum", back);
   if (!inst || !inst.active) fail(back, "Ölçüm yalnızca makinedeki ürünler için eklenebilir.");
   const dateStr = str(fd, "measureDate");
   if (!dateStr) fail(back, "Ölçüm tarihi zorunludur.");
@@ -482,7 +489,7 @@ async function saveAttachment(
 
 export async function uploadAttachmentAction(productId: number, fd: FormData) {
   const back = `/urunler/${productId}`;
-  const s = await requireRole(canOperate, back);
+  const s = await requirePerm("islem_urun", back);
   const file = fd.get("file");
   const kind = (str(fd, "kind") as "FOTO" | "DOKUMAN" | "HASAR") || "FOTO";
   if (!(file instanceof File) || file.size === 0) fail(back, "Dosya seçmelisiniz.");
@@ -508,9 +515,15 @@ export async function deleteAttachmentAction(id: number, productId: number) {
 
 export async function createPositionAction(fd: FormData) {
   const back = "/pozisyonlar";
-  const s = await requireRole(isAdmin, back);
+  const s = await requirePerm("islem_tanim", back);
   const name = str(fd, "name");
   if (!name) fail(back, "Pozisyon adı zorunludur.");
+  // Sıra otomatik atanır: aynı makinedeki son pozisyonun ardına eklenir
+  const last = await prisma.position.aggregate({
+    where: { machineName: str(fd, "machineName") || "PM-1" },
+    _max: { sortOrder: true },
+  });
+  const nextOrder = (last._max.sortOrder ?? 0) + 1;
   try {
     const p = await prisma.position.create({
       data: {
@@ -518,7 +531,7 @@ export async function createPositionAction(fd: FormData) {
         type: str(fd, "type") === "ELEK" ? "ELEK" : "KECE",
         machineName: str(fd, "machineName") || "PM-1",
         minStock: int(fd, "minStock") ?? 1,
-        sortOrder: int(fd, "sortOrder") ?? 99,
+        sortOrder: nextOrder,
       },
     });
     await audit(s, "TANIM", `Yeni pozisyon eklendi: ${p.machineName} / ${p.name}`, "Position", p.id);
@@ -531,7 +544,7 @@ export async function createPositionAction(fd: FormData) {
 
 export async function updatePositionAction(id: number, fd: FormData) {
   const back = "/pozisyonlar";
-  const s = await requireRole(isAdmin, back);
+  const s = await requirePerm("islem_tanim", back);
   const name = str(fd, "name");
   if (!name) fail(back, "Pozisyon adı zorunludur.");
   try {
@@ -541,7 +554,6 @@ export async function updatePositionAction(id: number, fd: FormData) {
         name,
         machineName: str(fd, "machineName") || "PM-1",
         minStock: int(fd, "minStock") ?? 1,
-        sortOrder: int(fd, "sortOrder") ?? 99,
       },
     });
     await audit(s, "TANIM", `Pozisyon güncellendi: ${p.machineName} / ${p.name}`, "Position", id);
@@ -554,7 +566,7 @@ export async function updatePositionAction(id: number, fd: FormData) {
 
 export async function deletePositionAction(id: number) {
   const back = "/pozisyonlar";
-  const s = await requireRole(isAdmin, back);
+  const s = await requirePerm("islem_tanim", back);
   const activeCount = await prisma.installation.count({ where: { positionId: id, active: true } });
   if (activeCount > 0) fail(back, "Üzerinde aktif ürün olan pozisyon silinemez. Önce söküm yapın.");
   const p = await prisma.position.update({ where: { id }, data: { deletedAt: new Date() } });
@@ -569,7 +581,7 @@ export async function deletePositionAction(id: number) {
 
 export async function createReasonAction(fd: FormData) {
   const back = "/tanimlar";
-  const s = await requireRole(isAdmin, back);
+  const s = await requirePerm("islem_tanim", back);
   const name = str(fd, "name");
   if (!name) fail(back, "Neden adı zorunludur.");
   try {
@@ -586,7 +598,7 @@ export async function createReasonAction(fd: FormData) {
 
 export async function deleteReasonAction(id: number) {
   const back = "/tanimlar";
-  const s = await requireRole(isAdmin, back);
+  const s = await requirePerm("islem_tanim", back);
   const r = await prisma.failureReason.update({ where: { id }, data: { deletedAt: new Date() } });
   await audit(s, "TANIM", `Söküm nedeni silindi: ${r.name}`);
   refresh();
@@ -595,7 +607,7 @@ export async function deleteReasonAction(id: number) {
 
 export async function createNamedAction(kind: "manufacturer" | "supplier", fd: FormData) {
   const back = "/tanimlar";
-  const s = await requireRole(isAdmin, back);
+  const s = await requirePerm("islem_tanim", back);
   const name = str(fd, "name");
   if (!name) fail(back, "Ad zorunludur.");
   const model = kind === "manufacturer" ? prisma.manufacturer : prisma.supplier;
@@ -611,7 +623,7 @@ export async function createNamedAction(kind: "manufacturer" | "supplier", fd: F
 
 export async function deleteNamedAction(kind: "manufacturer" | "supplier", id: number) {
   const back = "/tanimlar";
-  const s = await requireRole(isAdmin, back);
+  const s = await requirePerm("islem_tanim", back);
   const model = kind === "manufacturer" ? prisma.manufacturer : prisma.supplier;
   const r = await (model as typeof prisma.manufacturer).update({
     where: { id },
@@ -684,4 +696,28 @@ export async function updateUserAction(id: number, fd: FormData) {
   }
   refresh();
   done(back, "İşlem tamamlandı.");
+}
+
+// ---------------------------------------------------------------------------
+// Rol yetkileri (yalnızca yönetici)
+// ---------------------------------------------------------------------------
+
+export async function updateRolePermissionsAction(fd: FormData) {
+  const back = "/kullanicilar";
+  const s = await requireRole(isAdmin, back);
+  for (const role of EDITABLE_ROLES) {
+    const granted = ALL_PERMS.filter((p) => fd.get(`${role}:${p}`) === "on");
+    await prisma.rolePermission.deleteMany({ where: { role } });
+    await prisma.rolePermission.createMany({
+      data: [CONFIGURED_MARKER, ...granted].map((permission) => ({ role, permission })),
+    });
+    await audit(
+      s,
+      "SISTEM",
+      `${ROLE_LABELS[role]} rolünün yetkileri güncellendi (${granted.length} yetki).`,
+      "RolePermission"
+    );
+  }
+  refresh();
+  done(back, "Rol yetkileri kaydedildi. Değişiklikler kullanıcıların bir sonraki sayfa yüklemesinde geçerli olur.");
 }

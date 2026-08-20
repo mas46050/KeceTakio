@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireSession, canOperate } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
 import { sokumAction } from "@/lib/actions";
 import { calcLife } from "@/lib/life";
 import { fmtDateTime, toDateInputValue } from "@/lib/format";
@@ -18,7 +19,8 @@ export default async function SokumPage({
   const s = await requireSession();
   const { id } = await params;
   const sp = await searchParams;
-  if (!canOperate(s)) redirect("/?hata=S%C3%B6k%C3%BCm%20i%C3%A7in%20yetkiniz%20yok.");
+  const perms = await getPermSet(s.role);
+  if (!perms.has("islem_montaj")) redirect("/?hata=S%C3%B6k%C3%BCm%20i%C3%A7in%20yetkiniz%20yok.");
 
   const inst = await prisma.installation.findFirst({
     where: { id: Number(id), active: true },

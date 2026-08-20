@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
-import { requireSession, canOperate } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
 import { redirect } from "next/navigation";
 import { montajAction } from "@/lib/actions";
 import { toDateInputValue } from "@/lib/format";
@@ -13,7 +14,8 @@ export default async function MontajPage({
   searchParams: Promise<{ ok?: string; hata?: string; urun?: string }>;
 }) {
   const s = await requireSession();
-  if (!canOperate(s)) redirect("/?hata=Montaj%20i%C3%A7in%20yetkiniz%20yok.");
+  const perms = await getPermSet(s.role);
+  if (!perms.has("islem_montaj")) redirect("/?hata=Montaj%20i%C3%A7in%20yetkiniz%20yok.");
   const sp = await searchParams;
   const preselect = sp.urun ? Number(sp.urun) : undefined;
 

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireSession, canOperate, canEnterTech, isAdmin } from "@/lib/auth";
+import { requireSession, isAdmin } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
+import { redirect } from "next/navigation";
 import {
   addMeasurementAction,
   addWashAction,
@@ -25,6 +27,8 @@ export default async function ProductDetailPage({
   searchParams: Promise<{ ok?: string; hata?: string }>;
 }) {
   const s = await requireSession();
+  const perms = await getPermSet(s.role);
+  if (!perms.has("sayfa_urunler")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
   const { id } = await params;
   const sp = await searchParams;
   const productId = Number(id);
@@ -77,13 +81,13 @@ export default async function ProductDetailPage({
           {product.code} <TypeBadge type={product.type} /> <StatusBadge status={product.status} />
         </h1>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {canOperate(s) && (
+          {perms.has("islem_urun") && (
             <Link className="btn" href={`/urunler/${product.id}/duzenle`}>Düzenle</Link>
           )}
-          {canOperate(s) && product.status !== "MAKINEDE" && (
+          {perms.has("islem_montaj") && product.status !== "MAKINEDE" && (
             <Link className="btn primary" href={`/montaj?urun=${product.id}`}>Montaj Yap</Link>
           )}
-          {activeInst && canOperate(s) && (
+          {activeInst && perms.has("islem_montaj") && (
             <Link className="btn warn" href={`/sokum/${activeInst.id}`}>Söküm Yap</Link>
           )}
         </div>
@@ -148,7 +152,7 @@ export default async function ProductDetailPage({
             </>
           )}
 
-          {canOperate(s) && product.status !== "MAKINEDE" && (
+          {perms.has("islem_urun") && product.status !== "MAKINEDE" && (
             <>
               <h2 style={{ marginTop: 16 }}>Durum Değiştir</h2>
               <form action={statusAction} className="inline-form">
@@ -180,7 +184,7 @@ export default async function ProductDetailPage({
         <div className="panel-grid">
           <div className="panel">
             <h2>🧴 Yıkama Kayıtları ({activeInst.washes.length})</h2>
-            {canEnterTech(s) && (
+            {perms.has("islem_yikama_olcum") && (
               <form action={addWashAction.bind(null, activeInst.id)} className="inline-form no-print">
                 <label>Tarih<input type="date" name="washDate" required defaultValue={toDateInputValue(new Date())} /></label>
                 <label>Tür
@@ -218,7 +222,7 @@ export default async function ProductDetailPage({
 
           <div className="panel">
             <h2>📏 Haftalık Ölçümler ({activeInst.measurements.length})</h2>
-            {canEnterTech(s) && (
+            {perms.has("islem_yikama_olcum") && (
               <form action={addMeasurementAction.bind(null, activeInst.id)} className="inline-form no-print">
                 <label>Tarih<input type="date" name="measureDate" required defaultValue={toDateInputValue(new Date())} /></label>
                 <label>Kalınlık (mm)<input type="text" inputMode="decimal" name="thicknessMm" /></label>
@@ -304,7 +308,7 @@ export default async function ProductDetailPage({
 
       <div className="panel">
         <h2>📎 Fotoğraf ve Dokümanlar</h2>
-        {canOperate(s) && (
+        {perms.has("islem_urun") && (
           <form action={uploadAction} className="inline-form no-print" encType="multipart/form-data">
             <label>Dosya<input type="file" name="file" required accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" /></label>
             <label>Tür

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
+import { redirect } from "next/navigation";
 import { calcLife } from "@/lib/life";
 import { fmtDateTime, fmtMoney, fmtNum } from "@/lib/format";
 import { LifeBar, TypeBadge } from "@/components/ui";
@@ -13,7 +15,9 @@ export default async function PositionHistoryPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireSession();
+  const s = await requireSession();
+  const perms = await getPermSet(s.role);
+  if (!perms.has("sayfa_pozisyonlar")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
   const { id } = await params;
   const pos = await prisma.position.findUnique({
     where: { id: Number(id) },

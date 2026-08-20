@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireSession, canOperate } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
+import { redirect } from "next/navigation";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { Flash, StatusBadge, TypeBadge } from "@/components/ui";
 
@@ -14,6 +16,8 @@ export default async function StockPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const s = await requireSession();
+  const perms = await getPermSet(s.role);
+  if (!perms.has("sayfa_stok")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
   const sp = await searchParams;
   const type = sp.tip === "ELEK" || sp.tip === "KECE" ? sp.tip : undefined;
 
@@ -54,7 +58,7 @@ export default async function StockPage({
       <Flash sp={sp} />
       <div className="page-head">
         <h1>Stok Yönetimi</h1>
-        {canOperate(s) && (
+        {perms.has("islem_urun") && (
           <Link href="/urunler/yeni" className="btn primary">+ Stok Girişi</Link>
         )}
       </div>

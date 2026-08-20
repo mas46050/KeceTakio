@@ -251,6 +251,16 @@ model AuditLog {
   @@index([action])
 }
 
+// Rol bazlı yetkiler: satır varsa yetki verilmiştir.
+// Yönetici rolü her zaman tüm yetkilere sahiptir (tabloda tutulmaz).
+model RolePermission {
+  id         Int    @id @default(autoincrement())
+  role       Role
+  permission String
+
+  @@unique([role, permission])
+}
+
 // Stok hareketleri (giriş / çıkış / durum değişimi)
 model StockMovement {
   id        Int      @id @default(autoincrement())

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
+import { redirect } from "next/navigation";
 import { fmtDate } from "@/lib/format";
 import { StatusBadge, TypeBadge } from "@/components/ui";
 
@@ -11,7 +13,9 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  await requireSession();
+  const s = await requireSession();
+  const perms = await getPermSet(s.role);
+  if (!perms.has("sayfa_urunler")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
 

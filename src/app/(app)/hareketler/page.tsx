@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
+import { redirect } from "next/navigation";
 import { fmtDateTime } from "@/lib/format";
 import { Flash } from "@/components/ui";
 
@@ -32,7 +34,9 @@ export default async function AuditPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await requireSession();
+  const s = await requireSession();
+  const perms = await getPermSet(s.role);
+  if (!perms.has("sayfa_hareketler")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
   const sp = await searchParams;
   const action = sp.tip && ACTION_LABELS[sp.tip] ? sp.tip : undefined;
   const q = (sp.q ?? "").trim();

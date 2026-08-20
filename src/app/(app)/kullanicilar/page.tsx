@@ -1,7 +1,9 @@
+import React from "react";
 import { prisma } from "@/lib/db";
 import { requireSession, isAdmin, ROLE_LABELS } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { createUserAction, updateUserAction } from "@/lib/actions";
+import { createUserAction, updateRolePermissionsAction, updateUserAction } from "@/lib/actions";
+import { EDITABLE_ROLES, PERM_GROUPS, getPermSet } from "@/lib/perm";
 import { fmtDate } from "@/lib/format";
 import { Flash } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
@@ -21,6 +23,10 @@ export default async function UsersPage({
     where: { deletedAt: null },
     orderBy: { username: "asc" },
   });
+  const rolePerms: Record<string, Set<string>> = {};
+  for (const role of EDITABLE_ROLES) {
+    rolePerms[role] = await getPermSet(role);
+  }
 
   return (
     <>
@@ -43,9 +49,65 @@ export default async function UsersPage({
           <button className="btn primary sm" type="submit">Ekle</button>
         </form>
         <p className="muted" style={{ marginBottom: 0 }}>
-          Yönetici: tüm yetkiler · Bakım: montaj, söküm ve teknik kayıt · Operatör: görüntüleme +
-          yıkama/ölçüm kayıtları · Görüntüleyici: sadece görüntüleme.
+          Rollerin hangi sayfaları görüp hangi işlemleri yapabileceğini aşağıdaki
+          &quot;Rol Yetkileri&quot; tablosundan belirlersiniz.
         </p>
+      </div>
+
+      <div className="panel">
+        <h2>Rol Yetkileri</h2>
+        <p className="muted">
+          İşaretli kutu, o rolün yetkili olduğu anlamına gelir. Yönetici rolü her zaman tüm
+          yetkilere sahiptir ve değiştirilemez. Kullanıcı yönetimi ve kayıt silme yalnızca
+          Yönetici rolündedir.
+        </p>
+        <form action={updateRolePermissionsAction}>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Yetki</th>
+                  <th style={{ textAlign: "center" }}>Yönetici</th>
+                  {EDITABLE_ROLES.map((r) => (
+                    <th key={r} style={{ textAlign: "center" }}>{ROLE_LABELS[r]}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {PERM_GROUPS.map((g) => (
+                  <React.Fragment key={g.title}>
+                    <tr>
+                      <td colSpan={2 + EDITABLE_ROLES.length} style={{ background: "#f1f5f9", fontWeight: 700 }}>
+                        {g.title}
+                      </td>
+                    </tr>
+                    {g.perms.map((perm) => (
+                      <tr key={perm.key}>
+                        <td>{perm.label}</td>
+                        <td style={{ textAlign: "center" }}>
+                          <input type="checkbox" checked disabled style={{ width: 18, height: 18 }} />
+                        </td>
+                        {EDITABLE_ROLES.map((r) => (
+                          <td key={r} style={{ textAlign: "center" }}>
+                            <input
+                              type="checkbox"
+                              name={`${r}:${perm.key}`}
+                              defaultChecked={rolePerms[r].has(perm.key)}
+                              style={{ width: 18, height: 18 }}
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button className="btn primary" type="submit" style={{ marginTop: 12 }}>
+            Rol Yetkilerini Kaydet
+          </button>
+        </form>
       </div>
 
       <div className="panel table-wrap">

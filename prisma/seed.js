@@ -33,7 +33,30 @@ const REASONS = [
   { name: "Diğer", planned: false, sortOrder: 13 },
 ];
 
+const PAGE_PERMS = [
+  "sayfa_urunler", "sayfa_stok", "sayfa_pozisyonlar", "sayfa_raporlar", "sayfa_hareketler",
+];
+const DEFAULT_ROLE_PERMS = {
+  BAKIM: [...PAGE_PERMS, "islem_urun", "islem_montaj", "islem_yikama_olcum", "_configured"],
+  OPERATOR: [...PAGE_PERMS, "islem_yikama_olcum", "_configured"],
+  IZLEYICI: [...PAGE_PERMS, "_configured"],
+};
+
+async function seedRolePermissions() {
+  const count = await prisma.rolePermission.count();
+  if (count > 0) return;
+  for (const [role, perms] of Object.entries(DEFAULT_ROLE_PERMS)) {
+    for (const permission of perms) {
+      await prisma.rolePermission.create({ data: { role, permission } });
+    }
+  }
+  console.log("Varsayılan rol yetkileri yüklendi.");
+}
+
 async function main() {
+  // Rol yetkileri mevcut kurulumlara da eklenir (tablo boşsa)
+  await seedRolePermissions();
+
   const userCount = await prisma.user.count();
   if (userCount > 0) {
     console.log("Veritabanı zaten dolu, seed atlandı.");

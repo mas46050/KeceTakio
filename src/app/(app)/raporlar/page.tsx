@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
+import { redirect } from "next/navigation";
 import { parseReportFilters, queryReportRows, groupStats } from "@/lib/report";
 import { fmtDate, fmtMoney, fmtNum } from "@/lib/format";
 import { Flash, LifeBar, TypeBadge } from "@/components/ui";
@@ -14,7 +16,9 @@ export default async function ReportsPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await requireSession();
+  const s = await requireSession();
+  const perms = await getPermSet(s.role);
+  if (!perms.has("sayfa_raporlar")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
   const sp = await searchParams;
   const f = parseReportFilters(sp);
 

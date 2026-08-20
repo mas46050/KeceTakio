@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireSession, isAdmin } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
+import { getPermSet } from "@/lib/perm";
+import { redirect } from "next/navigation";
 import { createPositionAction, deletePositionAction, updatePositionAction } from "@/lib/actions";
 import { calcLife } from "@/lib/life";
 import { Flash, LifeBar, TypeBadge } from "@/components/ui";
@@ -14,8 +16,10 @@ export default async function PositionsPage({
   searchParams: Promise<{ ok?: string; hata?: string }>;
 }) {
   const s = await requireSession();
+  const perms = await getPermSet(s.role);
+  if (!perms.has("sayfa_pozisyonlar")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
   const sp = await searchParams;
-  const admin = isAdmin(s);
+  const admin = perms.has("islem_tanim");
 
   const positions = await prisma.position.findMany({
     where: { deletedAt: null },
@@ -47,7 +51,6 @@ export default async function PositionsPage({
               </select>
             </label>
             <label>Asgari Stok<input type="text" inputMode="numeric" name="minStock" defaultValue="1" /></label>
-            <label>Sıra<input type="text" inputMode="numeric" name="sortOrder" defaultValue="99" /></label>
             <button className="btn primary sm" type="submit">Ekle</button>
           </form>
         </div>
@@ -90,7 +93,6 @@ export default async function PositionsPage({
                           <input type="text" name="machineName" defaultValue={pos.machineName} title="Makine" />
                           <input type="text" name="name" defaultValue={pos.name} title="Pozisyon adı" />
                           <input type="text" inputMode="numeric" name="minStock" defaultValue={pos.minStock} title="Asgari stok" />
-                          <input type="text" inputMode="numeric" name="sortOrder" defaultValue={pos.sortOrder} title="Sıra" />
                           <button className="btn sm primary" type="submit">Kaydet</button>
                         </form>
                         <form action={deletePositionAction.bind(null, pos.id)} style={{ marginTop: 6 }}>
