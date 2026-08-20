@@ -3,8 +3,8 @@ import { getLocale, getTheme } from "@/lib/locale-server";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "KeçeTakip — Elek & Keçe Takip Yönetim Sistemi",
-  description: "Kâğıt fabrikası elek ve keçe stok, ömür, maliyet ve performans takibi",
+  title: "ASKO | Elek & Keçe Takip",
+  description: "ASKO — kâğıt fabrikası elek ve keçe stok, ömür, maliyet ve performans takibi",
 };
 
 // maximum-scale=1 kullanılmıyor (erişilebilirlik); mobil input zoom'u

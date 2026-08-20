@@ -340,3 +340,24 @@ label > input, label > select, label > textarea { margin-top: 5px; font-weight: 
 [data-theme="dark"] .badge.gray { background: #2c3a4f; color: #b6c2d4; }
 [data-theme="dark"] .trash-btn { background: #331113; border-color: #7f1d1d; color: #fca5a5; }
 [data-theme="dark"] .nudge-btns button { background: #1d2c40; color: var(--muted); border-color: var(--border); }
+
+/* ---- ASKO marka alanı ---- */
+.sidebar .brand { padding: 16px 16px 12px; }
+.brand-sub {
+  margin-top: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #93a8c0;
+  line-height: 1.35;
+}
+.login-appname {
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 6px;
+}

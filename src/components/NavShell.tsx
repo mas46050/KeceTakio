@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/lib/actions";
 import { LOCALES, THEME_COOKIE, tFor } from "@/lib/i18n";
+import AskoLogo from "@/components/AskoLogo";
 
 type NavItem = { href: string; label: string };
 
@@ -39,7 +40,10 @@ export default function NavShell({
     <div className="shell">
       {open && <div className="backdrop" onClick={() => setOpen(false)} />}
       <aside className={`sidebar ${open ? "open" : ""}`}>
-        <div className="brand">🏭 KeçeTakip</div>
+        <div className="brand">
+          <AskoLogo height={30} wordColor="#ffffff" />
+          <div className="brand-sub">{t("Elek & Keçe Takip Yönetim Sistemi")}</div>
+        </div>
         <nav>
           {items.map((it) => {
             const active =

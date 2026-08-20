@@ -4,6 +4,7 @@ import { getLocale } from "@/lib/locale-server";
 import { LOCALES, tFor } from "@/lib/i18n";
 import { redirect } from "next/navigation";
 import { Flash } from "@/components/ui";
+import AskoLogo from "@/components/AskoLogo";
 
 export default async function LoginPage({
   searchParams,
@@ -18,10 +19,10 @@ export default async function LoginPage({
   return (
     <div className="login-wrap">
       <div className="login-box">
-        <h1>🏭 KeçeTakip</h1>
-        <p className="muted" style={{ textAlign: "center" }}>
-          {t("Elek & Keçe Takip Yönetim Sistemi")}
-        </p>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+          <AskoLogo height={52} />
+        </div>
+        <p className="login-appname">{t("Elek & Keçe Takip Yönetim Sistemi")}</p>
         <div className="lang-flags" style={{ justifyContent: "center", marginBottom: 4 }}>
           {LOCALES.map((l) => (
             <a
