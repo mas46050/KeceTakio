@@ -4,6 +4,7 @@ import { calcLife } from "@/lib/life";
 import { fmtDate, fmtDateTime, fmtMoney, fmtNum } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trAudit, trPos } from "@/lib/dynamic-i18n";
 import { Flash, LifeBar, LifeBadge, StatusBadge, TypeBadge } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -137,7 +138,7 @@ export default async function Dashboard({
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {criticalStock.map(({ pos, avail }) => (
               <li key={`s${pos.id}`}>
-                <strong>{t("Stok kritik seviyede")}:</strong> {pos.machineName} / {pos.name} —{" "}
+                <strong>{t("Stok kritik seviyede")}:</strong> {pos.machineName} / {trPos(pos.name, locale)} —{" "}
                 {avail} {t("adet var, asgari")} {pos.minStock}.{" "}
                 <Link href="/stok">{t("Stoğa git")}</Link>
               </li>
@@ -152,7 +153,7 @@ export default async function Dashboard({
                       : t("Ömrünün %80'ine ulaştı")}
                   :
                 </strong>{" "}
-                {i.product.code} — {i.position.machineName} / {i.position.name} (%{i.life.usedPct}).{" "}
+                {i.product.code} — {i.position.machineName} / {trPos(i.position.name, locale)} (%{i.life.usedPct}).{" "}
                 {i.life.remainingDays > 0 && i.life.remainingDays <= 7 && (
                   <em>{t("Yaklaşan planlı değişim")}: ~{i.life.remainingDays} {t("gün")}. </em>
                 )}
@@ -177,7 +178,7 @@ export default async function Dashboard({
                 <tbody>
                   {upcoming.map((i) => (
                     <tr key={i.id}>
-                      <td>{i.position.machineName} / {i.position.name}</td>
+                      <td>{i.position.machineName} / {trPos(i.position.name, locale)}</td>
                       <td>
                         <Link href={`/urunler/${i.productId}`}>{i.product.code}</Link>
                         <br /><small>{i.product.manufacturer?.name ?? ""} {i.product.productCode}</small>
@@ -204,7 +205,7 @@ export default async function Dashboard({
                   <tr key={l.id}>
                     <td style={{ whiteSpace: "nowrap" }}>{fmtDateTime(l.createdAt)}</td>
                     <td>{l.user?.fullName ?? "—"}</td>
-                    <td>{l.description}</td>
+                    <td>{trAudit(l.description, locale)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -227,7 +228,7 @@ export default async function Dashboard({
                 return (
                   <div key={pos.id} className={`pos-card ${inst ? inst.life.status : "empty"}`}>
                     <div className="pos-name">
-                      {pos.name} <TypeBadge type={pos.type} locale={locale} />
+                      {trPos(pos.name, locale)} <TypeBadge type={pos.type} locale={locale} />
                     </div>
                     {inst ? (
                       <>

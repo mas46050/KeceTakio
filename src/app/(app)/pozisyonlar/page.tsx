@@ -6,6 +6,7 @@ import { createPositionAction } from "@/lib/actions";
 import { calcLife } from "@/lib/life";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trPos } from "@/lib/dynamic-i18n";
 
 import { Flash } from "@/components/ui";
 import PositionManager, { type PosRow } from "@/components/PositionManager";
@@ -47,6 +48,7 @@ export default async function PositionsPage({
         return {
           id: p.id,
           name: p.name,
+          displayName: trPos(p.name, locale),
           machineName: p.machineName,
           type: p.type,
           minStock: p.minStock,

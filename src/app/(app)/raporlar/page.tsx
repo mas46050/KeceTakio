@@ -7,6 +7,7 @@ import { parseReportFilters, queryReportRows, groupStats } from "@/lib/report";
 import { fmtDate, fmtMoney, fmtNum } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trAudit, trPos } from "@/lib/dynamic-i18n";
 
 import { Flash, LifeBar, TypeBadge } from "@/components/ui";
 import { BarBox, LineBox, PieBox } from "@/components/charts";
@@ -72,9 +73,9 @@ export default async function ReportsPage({
     }));
 
   const manufacturerStats = groupStats(rows, (r) => r.product.manufacturer?.name ?? "—");
-  const positionStats = groupStats(rows, (r) => `${r.position.machineName} / ${r.position.name}`);
+  const positionStats = groupStats(rows, (r) => `${r.position.machineName} / ${trPos(r.position.name, locale)}`);
   const productCodeStats = groupStats(rows, (r) => r.product.productCode || r.product.code);
-  const reasonDist = groupStats(finished, (r) => r.failureReason?.name ?? "Belirtilmemiş").map(
+  const reasonDist = groupStats(finished, (r) => (r.failureReason ? t(r.failureReason.name) : "—")).map(
     (g) => ({ neden: g.key, adet: g.finishedCount })
   );
 
@@ -109,7 +110,7 @@ export default async function ReportsPage({
           <select name="pozisyon" defaultValue={f.pozisyon ?? ""}>
             <option value="">{t("Tümü")}</option>
             {positions.map((p) => (
-              <option key={p.id} value={p.id}>{p.machineName} / {p.name}</option>
+              <option key={p.id} value={p.id}>{p.machineName} / {trPos(p.name, locale)}</option>
             ))}
           </select>
         </label>
@@ -126,7 +127,7 @@ export default async function ReportsPage({
           <select name="neden" defaultValue={f.neden ?? ""}>
             <option value="">{t("Tümü")}</option>
             {reasons.map((r) => (
-              <option key={r.id} value={r.id}>{r.name}</option>
+              <option key={r.id} value={r.id}>{t(r.name)}</option>
             ))}
           </select>
         </label>
@@ -277,12 +278,12 @@ export default async function ReportsPage({
                   <td><Link href={`/urunler/${r.productId}`}>{r.product.code}</Link></td>
                   <td><TypeBadge type={r.product.type} locale={locale} /></td>
                   <td>{r.product.manufacturer?.name ?? "—"}</td>
-                  <td>{r.position.name}</td>
+                  <td>{trPos(r.position.name, locale)}</td>
                   <td>{fmtDate(r.installDate)}</td>
                   <td>{r.removeDate ? fmtDate(r.removeDate) : <span className="badge green">{t("Makinede")}</span>}</td>
                   <td>{r.life.workingDays} {t("gün")}</td>
                   <td><LifeBar life={r.life} locale={locale} /></td>
-                  <td>{r.failureReason?.name ?? "—"}</td>
+                  <td>{r.failureReason ? t(r.failureReason.name) : "—"}</td>
                   <td style={{ whiteSpace: "nowrap" }}>{fmtMoney(r.price, r.product.currency)}</td>
                   <td style={{ whiteSpace: "nowrap" }}>{r.dailyCost === null ? "—" : `${fmtMoney(r.dailyCost, r.product.currency)}/${t("gün")}`}</td>
                 </tr>

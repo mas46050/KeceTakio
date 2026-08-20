@@ -17,6 +17,7 @@ import type { LifeInfo } from "@/lib/life";
 export type PosRow = {
   id: number;
   name: string;
+  displayName?: string;
   machineName: string;
   type: string;
   minStock: number;
@@ -182,7 +183,7 @@ export default function PositionManager({
                     </span>
                   )}
                   <div className="pos-main">
-                    <strong>{row.name}</strong>
+                    <strong>{row.displayName ?? row.name}</strong>
                     <small className="muted">{row.count} {t("kullanım kaydı")} · {t("asgari stok")} {row.minStock}</small>
                   </div>
                   <div className="pos-cell">

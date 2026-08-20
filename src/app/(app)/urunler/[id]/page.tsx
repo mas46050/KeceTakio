@@ -15,6 +15,7 @@ import { calcLife, KIND_LABELS, WASH_TYPES } from "@/lib/life";
 import { fmtDate, fmtDateTime, fmtMoney, fmtNum, toDateInputValue } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trPos } from "@/lib/dynamic-i18n";
 import { Flash, LifeBadge, LifeBar, StatusBadge, TypeBadge } from "@/components/ui";
 import ConfirmButton from "@/components/ConfirmButton";
 
@@ -105,7 +106,7 @@ export default async function ProductDetailPage({
             <div><small className="muted">{t("Ürün Kodu")}</small><br />{product.productCode || "—"}</div>
             <div><small className="muted">{t("Seri No")}</small><br />{product.serialNo || "—"}</div>
             <div><small className="muted">{t("Sipariş No")}</small><br />{product.orderNo || "—"}</div>
-            <div><small className="muted">{t("Pozisyon")}</small><br />{product.position ? `${product.position.machineName} / ${product.position.name}` : "—"}</div>
+            <div><small className="muted">{t("Pozisyon")}</small><br />{product.position ? `${product.position.machineName} / ${trPos(product.position.name, locale)}` : "—"}</div>
             <div><small className="muted">{t("En × Boy (mm)")}</small><br />{product.widthMm ?? "—"} × {product.lengthMm ?? "—"}</div>
             <div><small className="muted">{t("Gramaj")}</small><br />{product.gsm ? `${fmtNum(product.gsm)} g/m²` : "—"}</div>
             <div><small className="muted">{t("Kalınlık")}</small><br />{product.thicknessMm ? `${product.thicknessMm} mm` : "—"}</div>
@@ -143,7 +144,7 @@ export default async function ProductDetailPage({
             <>
               <h2 style={{ marginTop: 16 }}>{t("Aktif Çalışma")}</h2>
               <p style={{ margin: "4px 0" }}>
-                {activeInst.position.machineName} / {activeInst.position.name} —{" "}
+                {activeInst.position.machineName} / {trPos(activeInst.position.name, locale)} —{" "}
                 {t("montaj")} {fmtDateTime(activeInst.installDate)}
               </p>
               <LifeBar life={life} locale={locale} />
@@ -276,7 +277,7 @@ export default async function ProductDetailPage({
                 const dc = l.workingDays > 0 ? Number(product.unitPrice) / l.workingDays : null;
                 return (
                   <tr key={i.id}>
-                    <td>{i.position.machineName} / {i.position.name}</td>
+                    <td>{i.position.machineName} / {trPos(i.position.name, locale)}</td>
                     <td>{fmtDateTime(i.installDate)}<br /><small>{i.installedBy?.fullName ?? ""}</small></td>
                     <td>
                       {i.removeDate ? (
@@ -287,7 +288,7 @@ export default async function ProductDetailPage({
                     </td>
                     <td>{l.workingDays} {t("gün")}<br /><small>{fmtNum(l.workingHours)} {t("saat")}</small></td>
                     <td><LifeBar life={l} locale={locale} /></td>
-                    <td>{i.failureReason?.name ?? "—"}</td>
+                    <td>{i.failureReason ? t(i.failureReason.name) : "—"}</td>
                     <td>{i.removalDecision === "HURDA" ? <span className="badge red">{t("Hurda")}</span> : i.removalDecision === "KULLANILABILIR" ? <span className="badge green">{t("Kullanılabilir")}</span> : "—"}</td>
                     <td>{dc === null ? "—" : `${fmtMoney(dc, product.currency)}/${t("gün")}`}</td>
                     <td>

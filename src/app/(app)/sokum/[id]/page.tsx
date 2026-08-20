@@ -7,6 +7,7 @@ import { calcLife } from "@/lib/life";
 import { fmtDateTime, toDateInputValue } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trPos } from "@/lib/dynamic-i18n";
 
 import { Flash, LifeBar } from "@/components/ui";
 
@@ -52,7 +53,7 @@ export default async function SokumPage({
       <h1>{t("Söküm Yap")} — {inst.product.code}</h1>
       <div className="panel">
         <div className="detail-grid">
-          <div><small className="muted">{t("Pozisyon")}</small><br /><strong>{inst.position.machineName} / {inst.position.name}</strong></div>
+          <div><small className="muted">{t("Pozisyon")}</small><br /><strong>{inst.position.machineName} / {trPos(inst.position.name, locale)}</strong></div>
           <div><small className="muted">{t("Ürün")}</small><br />{inst.product.code} — {inst.product.manufacturer?.name ?? ""} {inst.product.productCode}</div>
           <div><small className="muted">{t("Montaj")}</small><br />{fmtDateTime(inst.installDate)}</div>
           <div><small className="muted">{t("Ömür Durumu")}</small><br /><LifeBar life={life} locale={locale} /></div>
@@ -78,7 +79,7 @@ export default async function SokumPage({
             <option value="">{t("— Seçiniz —")}</option>
             {reasons.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.name} {r.planned ? t("(planlı)") : ""}
+                {t(r.name)} {r.planned ? t("(planlı)") : ""}
               </option>
             ))}
           </select>

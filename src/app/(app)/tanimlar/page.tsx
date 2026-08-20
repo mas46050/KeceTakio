@@ -73,7 +73,7 @@ export default async function DefinitionsPage({
               <tbody>
                 {reasons.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.name}</td>
+                    <td>{t(r.name)}</td>
                     <td>{r.planned ? <span className="badge green">{t("Planlı")}</span> : <span className="badge orange">{t("Plansız")}</span>}</td>
                     <td>{r._count.installations}</td>
                     <td>

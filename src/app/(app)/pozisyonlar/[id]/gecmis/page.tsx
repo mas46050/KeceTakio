@@ -8,6 +8,7 @@ import { calcLife } from "@/lib/life";
 import { fmtDateTime, fmtMoney, fmtNum } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trPos } from "@/lib/dynamic-i18n";
 
 import { LifeBar, TypeBadge } from "@/components/ui";
 
@@ -53,7 +54,7 @@ export default async function PositionHistoryPage({
     <>
       <div className="page-head">
         <h1>
-          {t("Pozisyon Geçmişi")} — {pos.machineName} / {pos.name} <TypeBadge type={pos.type} locale={locale} />
+          {t("Pozisyon Geçmişi")} — {pos.machineName} / {trPos(pos.name, locale)} <TypeBadge type={pos.type} locale={locale} />
         </h1>
         <Link className="btn" href="/pozisyonlar">{t("← Pozisyonlar")}</Link>
       </div>
@@ -92,7 +93,7 @@ export default async function PositionHistoryPage({
                   <td>{i.removeDate ? <>{fmtDateTime(i.removeDate)}<br /><small>{i.removedBy?.fullName ?? ""}</small></> : <span className="badge green">{t("Makinede")}</span>}</td>
                   <td>{l.workingDays} {t("gün")}</td>
                   <td><LifeBar life={l} locale={locale} /></td>
-                  <td>{i.failureReason?.name ?? "—"}</td>
+                  <td>{i.failureReason ? t(i.failureReason.name) : "—"}</td>
                   <td style={{ whiteSpace: "nowrap" }}>{fmtMoney(price, i.product.currency)}</td>
                   <td style={{ whiteSpace: "nowrap" }}>{dc === null ? "—" : `${fmtMoney(dc, i.product.currency)}/${t("gün")}`}</td>
                 </tr>

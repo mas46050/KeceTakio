@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trPos } from "@/lib/dynamic-i18n";
 
 import { Flash, StatusBadge, TypeBadge } from "@/components/ui";
 
@@ -99,7 +100,7 @@ export default async function StockPage({
               <tbody>
                 {critical.map((pos) => (
                   <tr key={pos.id}>
-                    <td>{pos.machineName} / {pos.name}</td>
+                    <td>{pos.machineName} / {trPos(pos.name, locale)}</td>
                     <td><TypeBadge type={pos.type} locale={locale} /></td>
                     <td style={{ color: "var(--danger)", fontWeight: 700 }}>{availByPos.get(pos.id) ?? 0}</td>
                     <td>{pos.minStock}</td>
@@ -137,7 +138,7 @@ export default async function StockPage({
               <tr key={p.id}>
                 <td><Link href={`/urunler/${p.id}`}><strong>{p.code}</strong></Link><br /><small>{p.brand} {p.productCode}</small></td>
                 <td><TypeBadge type={p.type} locale={locale} /></td>
-                <td>{p.position?.name ?? "—"}</td>
+                <td>{p.position ? trPos(p.position.name, locale) : "—"}</td>
                 <td>{p.manufacturer?.name ?? "—"}</td>
                 <td>{p.serialNo || "—"}</td>
                 <td>{fmtDate(p.stockDate)}</td>

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { fmtDate } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trPos } from "@/lib/dynamic-i18n";
 
 import { StatusBadge, TypeBadge } from "@/components/ui";
 
@@ -57,7 +58,7 @@ export default async function SearchPage({
 
       {q && (
         <div className="panel table-wrap">
-          <p className="muted">&quot;{q}&quot; için {products.length} {t("sonuç bulundu.")}</p>
+          <p className="muted">&quot;{q}&quot; — {products.length} {t("sonuç bulundu.")}</p>
           <table>
             <thead>
               <tr>
@@ -73,7 +74,7 @@ export default async function SearchPage({
                   <td>{p.manufacturer?.name ?? "—"}</td>
                   <td>{p.productCode || "—"}</td>
                   <td>{p.serialNo || "—"}</td>
-                  <td>{p.position?.name ?? "—"}</td>
+                  <td>{p.position ? trPos(p.position.name, locale) : "—"}</td>
                   <td><StatusBadge status={p.status} locale={locale} /></td>
                   <td>{fmtDate(p.stockDate)}</td>
                 </tr>

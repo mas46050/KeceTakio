@@ -6,6 +6,7 @@ import { montajAction } from "@/lib/actions";
 import { toDateInputValue } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trPos } from "@/lib/dynamic-i18n";
 
 import { Flash } from "@/components/ui";
 
@@ -76,7 +77,7 @@ export default async function MontajPage({
               <option value="">{t("— Seçiniz —")}</option>
               {positions.map((pos) => (
                 <option key={pos.id} value={pos.id}>
-                  {pos.machineName} / {pos.name} ({t(pos.type === "ELEK" ? "Elek" : "Keçe")})
+                  {pos.machineName} / {trPos(pos.name, locale)} ({t(pos.type === "ELEK" ? "Elek" : "Keçe")})
                   {occupied.has(pos.id) ? ` — ${t("DOLU")}` : ""}
                 </option>
               ))}

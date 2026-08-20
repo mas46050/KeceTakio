@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trPos } from "@/lib/dynamic-i18n";
 import { Flash, StatusBadge, TypeBadge } from "@/components/ui";
 import { STATUS_LABELS } from "@/lib/life";
 
@@ -99,7 +100,7 @@ export default async function ProductsPage({
                 <td><TypeBadge type={p.type} locale={locale} /></td>
                 <td>{p.manufacturer?.name ?? "—"}<br /><small>{p.brand} {p.productCode}</small></td>
                 <td>{p.serialNo || "—"}</td>
-                <td>{p.position ? p.position.name : "—"}</td>
+                <td>{p.position ? trPos(p.position.name, locale) : "—"}</td>
                 <td>{p.widthMm ?? "—"} × {p.lengthMm ?? "—"}</td>
                 <td style={{ whiteSpace: "nowrap" }}>{fmtMoney(Number(p.unitPrice), p.currency)}</td>
                 <td>{p.expectedLifeDays}</td>

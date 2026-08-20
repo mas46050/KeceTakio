@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { fmtDateTime } from "@/lib/format";
 import { getLocale } from "@/lib/locale-server";
 import { tFor } from "@/lib/i18n";
+import { trAudit } from "@/lib/dynamic-i18n";
 
 import { Flash } from "@/components/ui";
 
@@ -99,7 +100,7 @@ export default async function AuditPage({
                 <td style={{ whiteSpace: "nowrap" }}>{fmtDateTime(l.createdAt)}</td>
                 <td>{l.user ? l.user.fullName : "—"}</td>
                 <td><span className={`badge ${ACTION_COLORS[l.action] ?? "gray"}`}>{t(ACTION_LABELS[l.action] ?? l.action)}</span></td>
-                <td>{l.description}</td>
+                <td>{trAudit(l.description, locale)}</td>
               </tr>
             ))}
             {logs.length === 0 && <tr><td colSpan={4} className="muted">{t("Kayıt bulunamadı.")}</td></tr>}
