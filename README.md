@@ -8,6 +8,8 @@ Kâğıt fabrikaları için **keçe & elek stok, çalışma durumu, kalan ömür
 - **Stok takibi** — Keçe/elek stok kartları (kod, tedarikçi, ebat, gramaj, birim maliyet), stok girişi, stok düzeltme, minimum stok (kritik stok) uyarıları.
 - **Çalışma durumu** — Makine ve pozisyon tanımları (pres keçesi, yaş elek, kurutma eleği vb.), montaj ve söküm kayıtları; hangi pozisyonda hangi keçe/elek çalışıyor anında görülür.
 - **Kalan ömür** — Her keçe/elek için beklenen ömür (gün); takılma tarihinden itibaren kalan ömür yüzdesi renkli çubukla gösterilir, %25 altında uyarı verir.
+- **Yıkama kayıtları** — Takılı her keçe/elek için kostik yıkama, kimyasal yıkama vb. kayıtları: tarih, kullanılan kimyasal, süre ve yapan kullanıcı. Son yıkama tarihi ve toplam yıkama sayısı Çalışanlar listesinde görünür.
+- **Haftalık ölçümler** — Takılı her keçe/elek için kalınlık (mm), hava geçirgenliği (CFM), nem (%) ve vakum (kPa) ölçümleri tarih ve ölçen kullanıcı ile kaydedilir. 7 günden uzun süre ölçüm yapılmayanlar ana sayfada "ölçüm gecikti" uyarısıyla listelenir.
 - **Maliyet raporları** — Aylık satın alma maliyeti, makine bazlı kullanım maliyeti, sökülen keçe/eleklerin ömür performansı (gerçekleşen/beklenen) ve günlük maliyet analizi.
 - **Kullanıcı hareket takibi** — Stok girişi, montaj, söküm, düzeltme, kart değişikliği ve giriş/çıkış dahil tüm işlemler hangi kullanıcının yaptığı bilgisiyle kayıt altına alınır.
 
@@ -32,9 +34,10 @@ Veritabanı (`kecetakip.db`) SQLite dosyası olarak otomatik oluşturulur. İlk 
 1. **Stok** sayfasından keçe/elek kartlarını açın (beklenen ömür ve birim maliyeti girin).
 2. Kart üzerinden **Stok Girişi** yapın (miktar + güncel birim maliyet).
 3. **Montaj** sayfasından stoktaki ürünü boş bir pozisyona takın — stoktan otomatik düşer.
-4. **Çalışanlar** sayfasında kalan ömürleri izleyin; ömrü dolan/yıpranan ürün için **Söküm** kaydedin (neden seçilir).
-5. **Raporlar** sayfasından maliyet ve ömür performansını takip edin.
-6. **Hareketler** sayfasında kim, ne zaman, ne yaptı görün.
+4. **Çalışanlar** sayfasında kalan ömürleri izleyin; her satırdaki **Yıkama / Ölçüm** bağlantısından detay sayfasına girip yıkama ve haftalık ölçüm kayıtlarını ekleyin.
+5. Ömrü dolan/yıpranan ürün için **Söküm** kaydedin (neden seçilir).
+6. **Raporlar** sayfasından maliyet ve ömür performansını takip edin.
+7. **Hareketler** sayfasında kim, ne zaman, ne yaptı görün.
 
 ## Roller
 

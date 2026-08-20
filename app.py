@@ -35,11 +35,15 @@ MOVEMENT_TYPES = {
     "GIRIS": "Stok Girişi",
     "MONTAJ": "Montaj (Stoktan Çıkış)",
     "SOKUM": "Söküm",
+    "YIKAMA": "Yıkama",
+    "OLCUM": "Ölçüm",
     "DUZELTME": "Stok Düzeltme",
     "TANIM": "Kart Tanım/Değişiklik",
     "SISTEM": "Sistem",
 }
 REMOVAL_REASONS = ["Normal aşınma", "Hasar / yırtılma", "Kalite problemi", "Deneme", "Diğer"]
+WASH_TYPES = ["Kostik yıkama", "Kimyasal yıkama", "Basınçlı su", "Diğer"]
+MEASUREMENT_INTERVAL_DAYS = 7  # haftalık ölçüm beklenir
 
 
 # ----------------------------------------------------------------------------
@@ -116,6 +120,31 @@ CREATE TABLE IF NOT EXISTS installations (
     installed_by INTEGER REFERENCES users(id),
     removed_by INTEGER REFERENCES users(id),
     note TEXT DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS washes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    installation_id INTEGER NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
+    wash_date TEXT NOT NULL,
+    wash_type TEXT NOT NULL DEFAULT 'Kostik yıkama',
+    chemical TEXT DEFAULT '',          -- kullanılan kimyasal / konsantrasyon
+    duration_min INTEGER,              -- yıkama süresi (dakika)
+    note TEXT DEFAULT '',
+    user_id INTEGER REFERENCES users(id),
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS measurements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    installation_id INTEGER NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
+    measure_date TEXT NOT NULL,
+    thickness_mm REAL,                 -- kalınlık (mm)
+    permeability_cfm REAL,             -- hava geçirgenliği (CFM)
+    moisture_pct REAL,                 -- nem / rutubet (%)
+    vacuum_kpa REAL,                   -- vakum (kPa)
+    note TEXT DEFAULT '',
+    user_id INTEGER REFERENCES users(id),
+    created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS movements (
@@ -258,8 +287,30 @@ def active_installations():
     for r in rows:
         d = dict(r)
         d["life"] = life_info(r["install_date"], r["expected_life_days"])
+        wash = db.execute(
+            "SELECT wash_date, wash_type, COUNT(*) OVER () AS cnt FROM washes"
+            " WHERE installation_id = ? ORDER BY wash_date DESC, id DESC LIMIT 1",
+            (r["id"],)).fetchone()
+        d["last_wash"] = dict(wash) if wash else None
+        meas = db.execute(
+            "SELECT measure_date, COUNT(*) OVER () AS cnt FROM measurements"
+            " WHERE installation_id = ? ORDER BY measure_date DESC, id DESC LIMIT 1",
+            (r["id"],)).fetchone()
+        d["last_measurement"] = dict(meas) if meas else None
+        d["measurement_due"] = _measurement_overdue_days(r["install_date"], meas)
         result.append(d)
     return result
+
+
+def _measurement_overdue_days(install_date_str, last_meas):
+    """Haftalık ölçüm gecikmişse kaç gün geciktiğini döndürür, değilse None."""
+    ref = last_meas["measure_date"] if last_meas else install_date_str
+    try:
+        d0 = datetime.strptime(ref[:10], "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return None
+    overdue = (date.today() - d0).days - MEASUREMENT_INTERVAL_DAYS
+    return overdue if overdue > 0 else None
 
 
 # ----------------------------------------------------------------------------
@@ -309,6 +360,7 @@ def dashboard():
         "SELECT * FROM items WHERE stock_qty <= min_stock ORDER BY stock_qty ASC"
     ).fetchall()
     life_warnings = [a for a in actives if a["life"]["cls"] in ("warn", "danger")]
+    measurement_warnings = [a for a in actives if a["measurement_due"]]
     totals = {
         "stock_value": db.execute(
             "SELECT COALESCE(SUM(stock_qty * unit_cost), 0) FROM items").fetchone()[0],
@@ -330,6 +382,7 @@ def dashboard():
     """).fetchall()
     return render_template("dashboard.html", actives=actives, low_stock=low_stock,
                            life_warnings=life_warnings, totals=totals,
+                           measurement_warnings=measurement_warnings,
                            month_cost=month_cost, recent=recent)
 
 
@@ -609,6 +662,127 @@ def sokum(installation_id):
     db.commit()
     flash(f"{ins['item_code']} söküldü ({life['elapsed']} gün çalıştı).", "success")
     return redirect(url_for("calisan"))
+
+
+# ----------------------------------------------------------------------------
+# Keçe/elek detayı — yıkama ve haftalık ölçüm kayıtları
+# ----------------------------------------------------------------------------
+
+def _get_installation(installation_id):
+    return get_db().execute("""
+        SELECT ins.*, i.code AS item_code, i.name AS item_name, i.category,
+               i.unit_cost, p.name AS position_name, m.name AS machine_name,
+               u1.full_name AS installed_by_name, u2.full_name AS removed_by_name
+        FROM installations ins
+        JOIN items i ON i.id = ins.item_id
+        JOIN positions p ON p.id = ins.position_id
+        JOIN machines m ON m.id = p.machine_id
+        LEFT JOIN users u1 ON u1.id = ins.installed_by
+        LEFT JOIN users u2 ON u2.id = ins.removed_by
+        WHERE ins.id = ?
+    """, (installation_id,)).fetchone()
+
+
+@app.route("/kece/<int:installation_id>")
+@login_required
+def kece_detay(installation_id):
+    db = get_db()
+    ins = _get_installation(installation_id)
+    if not ins:
+        abort(404)
+    washes = db.execute("""
+        SELECT w.*, u.full_name AS user_name FROM washes w
+        LEFT JOIN users u ON u.id = w.user_id
+        WHERE w.installation_id = ? ORDER BY w.wash_date DESC, w.id DESC
+    """, (installation_id,)).fetchall()
+    measurements = db.execute("""
+        SELECT ms.*, u.full_name AS user_name FROM measurements ms
+        LEFT JOIN users u ON u.id = ms.user_id
+        WHERE ms.installation_id = ? ORDER BY ms.measure_date DESC, ms.id DESC
+    """, (installation_id,)).fetchall()
+    life = (life_info(ins["install_date"], ins["expected_life_days"])
+            if ins["status"] == "calisiyor" else None)
+    overdue = (_measurement_overdue_days(ins["install_date"],
+                                         measurements[0] if measurements else None)
+               if ins["status"] == "calisiyor" else None)
+    return render_template("kece_detay.html", ins=ins, washes=washes,
+                           measurements=measurements, life=life,
+                           wash_types=WASH_TYPES, overdue=overdue,
+                           interval=MEASUREMENT_INTERVAL_DAYS)
+
+
+@app.route("/kece/<int:installation_id>/yikama", methods=["POST"])
+@role_required("admin", "operator")
+def yikama_ekle(installation_id):
+    db = get_db()
+    ins = _get_installation(installation_id)
+    if not ins:
+        abort(404)
+    if ins["status"] != "calisiyor":
+        flash("Sökülmüş bir keçe/elek için yıkama kaydı eklenemez.", "error")
+        return redirect(url_for("kece_detay", installation_id=installation_id))
+    wash_date = request.form.get("wash_date") or date.today().isoformat()
+    wash_type = request.form.get("wash_type") or "Kostik yıkama"
+    chemical = request.form.get("chemical", "").strip()
+    duration = request.form.get("duration_min")
+    note = request.form.get("note", "").strip()
+    db.execute("""INSERT INTO washes (installation_id, wash_date, wash_type, chemical,
+                  duration_min, note, user_id, created_at) VALUES (?,?,?,?,?,?,?,?)""",
+               (installation_id, wash_date, wash_type, chemical,
+                int(duration) if duration else None, note,
+                session["user_id"], now_str()))
+    log_movement("YIKAMA", item_id=ins["item_id"], installation_id=installation_id,
+                 note=(f"{ins['machine_name']} / {ins['position_name']} — "
+                       f"{wash_type} ({wash_date})"))
+    db.commit()
+    flash("Yıkama kaydı eklendi.", "success")
+    return redirect(url_for("kece_detay", installation_id=installation_id))
+
+
+@app.route("/kece/<int:installation_id>/olcum", methods=["POST"])
+@role_required("admin", "operator")
+def olcum_ekle(installation_id):
+    db = get_db()
+    ins = _get_installation(installation_id)
+    if not ins:
+        abort(404)
+    if ins["status"] != "calisiyor":
+        flash("Sökülmüş bir keçe/elek için ölçüm kaydı eklenemez.", "error")
+        return redirect(url_for("kece_detay", installation_id=installation_id))
+    measure_date = request.form.get("measure_date") or date.today().isoformat()
+
+    def num(field):
+        v = request.form.get(field, "").strip().replace(",", ".")
+        return float(v) if v else None
+
+    thickness = num("thickness_mm")
+    permeability = num("permeability_cfm")
+    moisture = num("moisture_pct")
+    vacuum = num("vacuum_kpa")
+    note = request.form.get("note", "").strip()
+    if thickness is None and permeability is None and moisture is None and vacuum is None:
+        flash("En az bir ölçüm değeri girmelisiniz.", "error")
+        return redirect(url_for("kece_detay", installation_id=installation_id))
+    db.execute("""INSERT INTO measurements (installation_id, measure_date, thickness_mm,
+                  permeability_cfm, moisture_pct, vacuum_kpa, note, user_id, created_at)
+                  VALUES (?,?,?,?,?,?,?,?,?)""",
+               (installation_id, measure_date, thickness, permeability, moisture,
+                vacuum, note, session["user_id"], now_str()))
+    parts = []
+    if thickness is not None:
+        parts.append(f"kalınlık {thickness} mm")
+    if permeability is not None:
+        parts.append(f"geçirgenlik {permeability} CFM")
+    if moisture is not None:
+        parts.append(f"nem %{moisture}")
+    if vacuum is not None:
+        parts.append(f"vakum {vacuum} kPa")
+    log_movement("OLCUM", item_id=ins["item_id"], installation_id=installation_id,
+                 note=(f"{ins['machine_name']} / {ins['position_name']} ölçüm "
+                       f"({measure_date}): " + ", ".join(parts)))
+    db.commit()
+    flash("Ölçüm kaydı eklendi.", "success")
+    return redirect(url_for("kece_detay", installation_id=installation_id))
 
 
 # ----------------------------------------------------------------------------

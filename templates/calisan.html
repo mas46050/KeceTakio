@@ -10,22 +10,34 @@
 
 <table>
   <tr>
-    <th>Makine / Pozisyon</th><th>Ürün</th><th>Seri No</th><th>Takılma Tarihi</th>
-    <th>Takan</th><th>Kalan Ömür</th><th>Maliyet</th>
+    <th>Makine / Pozisyon</th><th>Ürün</th><th>Takılma Tarihi</th>
+    <th>Kalan Ömür</th><th>Son Yıkama</th><th>Son Ölçüm</th><th>Maliyet</th>
+    <th>Detay</th>
     {% if current_role in ('admin', 'operator') %}<th>Söküm</th>{% endif %}
   </tr>
   {% for a in actives %}
   <tr>
     <td><strong>{{ a.machine_name }}</strong> / {{ a.position_name }}</td>
-    <td>{{ a.item_code }} — {{ a.item_name }} <span class="tag">{{ a.category }}</span></td>
-    <td>{{ a.serial_no or '—' }}</td>
+    <td>{{ a.item_code }} — {{ a.item_name }} <span class="tag">{{ a.category }}</span>
+      {% if a.serial_no %}<br><small class="muted">Seri: {{ a.serial_no }}</small>{% endif %}</td>
     <td>{{ a.install_date }} <small class="muted">({{ a.life.elapsed }} gün önce)</small></td>
-    <td>{{ a.installed_by_name or '—' }}</td>
     <td>
       <div class="lifebar"><div class="fill {{ a.life.cls }}" style="width: {{ a.life.pct }}%"></div></div>
       <small>%{{ a.life.pct }} — {{ a.life.remaining }} gün / {{ a.life.expected }} gün</small>
     </td>
+    <td>
+      {% if a.last_wash %}
+      {{ a.last_wash.wash_date }}<br><small class="muted">{{ a.last_wash.wash_type }} ({{ a.last_wash.cnt }} kez)</small>
+      {% else %}<span class="muted">yok</span>{% endif %}
+    </td>
+    <td>
+      {% if a.last_measurement %}{{ a.last_measurement.measure_date }}
+        <small class="muted">({{ a.last_measurement.cnt }} kayıt)</small>
+      {% else %}<span class="muted">yok</span>{% endif %}
+      {% if a.measurement_due %}<br><span class="tag danger">ölçüm gecikti ({{ a.measurement_due }} gün)</span>{% endif %}
+    </td>
     <td>{{ "%.2f"|format(a.unit_cost or 0) }} ₺</td>
+    <td><a href="{{ url_for('kece_detay', installation_id=a.id) }}" class="btn small">Yıkama / Ölçüm</a></td>
     {% if current_role in ('admin', 'operator') %}
     <td class="actions">
       <details>
@@ -44,7 +56,7 @@
     {% endif %}
   </tr>
   {% else %}
-  <tr><td colspan="8" class="muted">Şu anda çalışan keçe/elek kaydı yok. Montaj sayfasından ekleyebilirsiniz.</td></tr>
+  <tr><td colspan="9" class="muted">Şu anda çalışan keçe/elek kaydı yok. Montaj sayfasından ekleyebilirsiniz.</td></tr>
   {% endfor %}
 </table>
 {% endblock %}

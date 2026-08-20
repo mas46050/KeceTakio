@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ ins.item_code }} Detay{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ ins.item_code }} — {{ ins.item_name }} <span class="tag">{{ ins.category }}</span></h1>
+  <a href="{{ url_for('calisan') }}" class="btn">← Çalışanlar</a>
+</div>
+
+<div class="panel">
+  <div class="detail-grid">
+    <div><small class="muted">Makine / Pozisyon</small><br><strong>{{ ins.machine_name }} / {{ ins.position_name }}</strong></div>
+    <div><small class="muted">Durum</small><br>
+      {% if ins.status == 'calisiyor' %}<span class="tag ok">Çalışıyor</span>
+      {% else %}<span class="tag danger">Söküldü ({{ ins.removed_date }})</span>{% endif %}
+    </div>
+    <div><small class="muted">Takılma Tarihi</small><br>{{ ins.install_date }}</div>
+    <div><small class="muted">Takan</small><br>{{ ins.installed_by_name or '—' }}</div>
+    <div><small class="muted">Seri No</small><br>{{ ins.serial_no or '—' }}</div>
+    <div><small class="muted">Maliyet</small><br>{{ "%.2f"|format(ins.unit_cost or 0) }} ₺</div>
+    {% if life %}
+    <div><small class="muted">Kalan Ömür</small><br>
+      <div class="lifebar"><div class="fill {{ life.cls }}" style="width: {{ life.pct }}%"></div></div>
+      <small>%{{ life.pct }} — {{ life.remaining }} gün / {{ life.expected }} gün</small>
+    </div>
+    {% endif %}
+    {% if ins.removal_reason %}
+    <div><small class="muted">Söküm Nedeni</small><br>{{ ins.removal_reason }} ({{ ins.removed_by_name or '—' }})</div>
+    {% endif %}
+    {% if ins.note %}
+    <div><small class="muted">Not</small><br>{{ ins.note }}</div>
+    {% endif %}
+  </div>
+</div>
+
+{% if overdue %}
+<div class="flash error">⚠️ Haftalık ölçüm gecikti: son ölçümün üzerinden {{ interval + overdue }} gün geçti ({{ overdue }} gün gecikme).</div>
+{% endif %}
+
+<div class="panel-row">
+  <div class="panel">
+    <h2>🧴 Yıkama Kayıtları ({{ washes|length }})</h2>
+    {% if ins.status == 'calisiyor' and current_role in ('admin', 'operator') %}
+    <form method="post" action="{{ url_for('yikama_ekle', installation_id=ins.id) }}" class="inline-form">
+      <input type="date" name="wash_date" value="{{ today }}" required title="Yıkama tarihi">
+      <select name="wash_type">
+        {% for w in wash_types %}<option>{{ w }}</option>{% endfor %}
+      </select>
+      <input type="text" name="chemical" placeholder="Kimyasal / konsantrasyon">
+      <input type="number" name="duration_min" min="1" placeholder="Süre (dk)" style="max-width:110px">
+      <input type="text" name="note" placeholder="Not">
+      <button type="submit" class="btn primary small">Yıkama Ekle</button>
+    </form>
+    {% endif %}
+    <table>
+      <tr><th>Tarih</th><th>Tür</th><th>Kimyasal</th><th>Süre</th><th>Yapan</th><th>Not</th></tr>
+      {% for w in washes %}
+      <tr>
+        <td>{{ w.wash_date }}</td>
+        <td><span class="tag yikama">{{ w.wash_type }}</span></td>
+        <td>{{ w.chemical or '—' }}</td>
+        <td>{{ (w.duration_min ~ ' dk') if w.duration_min else '—' }}</td>
+        <td>{{ w.user_name or '—' }}</td>
+        <td>{{ w.note }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted">Henüz yıkama kaydı yok.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>📏 Haftalık Ölçümler ({{ measurements|length }})</h2>
+    {% if ins.status == 'calisiyor' and current_role in ('admin', 'operator') %}
+    <form method="post" action="{{ url_for('olcum_ekle', installation_id=ins.id) }}" class="inline-form">
+      <input type="date" name="measure_date" value="{{ today }}" required title="Ölçüm tarihi">
+      <input type="text" name="thickness_mm" placeholder="Kalınlık (mm)" style="max-width:120px">
+      <input type="text" name="permeability_cfm" placeholder="Geçirgenlik (CFM)" style="max-width:140px">
+      <input type="text" name="moisture_pct" placeholder="Nem (%)" style="max-width:100px">
+      <input type="text" name="vacuum_kpa" placeholder="Vakum (kPa)" style="max-width:110px">
+      <input type="text" name="note" placeholder="Not">
+      <button type="submit" class="btn primary small">Ölçüm Ekle</button>
+    </form>
+    {% endif %}
+    <table>
+      <tr><th>Tarih</th><th>Kalınlık (mm)</th><th>Geçirgenlik (CFM)</th><th>Nem (%)</th><th>Vakum (kPa)</th><th>Ölçen</th><th>Not</th></tr>
+      {% for ms in measurements %}
+      <tr>
+        <td>{{ ms.measure_date }}</td>
+        <td>{{ ms.thickness_mm if ms.thickness_mm is not none else '—' }}</td>
+        <td>{{ ms.permeability_cfm if ms.permeability_cfm is not none else '—' }}</td>
+        <td>{{ ms.moisture_pct if ms.moisture_pct is not none else '—' }}</td>
+        <td>{{ ms.vacuum_kpa if ms.vacuum_kpa is not none else '—' }}</td>
+        <td>{{ ms.user_name or '—' }}</td>
+        <td>{{ ms.note }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="muted">Henüz ölçüm kaydı yok.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

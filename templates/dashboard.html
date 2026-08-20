@@ -42,6 +42,25 @@
 </div>
 {% endif %}
 
+{% if measurement_warnings %}
+<div class="panel">
+  <h2>📏 Ölçümü Geciken Keçe / Elekler</h2>
+  <p class="muted">Haftalık ölçümü 7 günü aşan kayıtlar.</p>
+  <table>
+    <tr><th>Makine / Pozisyon</th><th>Ürün</th><th>Son Ölçüm</th><th>Gecikme</th><th></th></tr>
+    {% for a in measurement_warnings %}
+    <tr>
+      <td>{{ a.machine_name }} / {{ a.position_name }}</td>
+      <td>{{ a.item_code }} — {{ a.item_name }}</td>
+      <td>{{ a.last_measurement.measure_date if a.last_measurement else 'Hiç ölçüm yapılmadı' }}</td>
+      <td><span class="tag danger">{{ a.measurement_due }} gün gecikti</span></td>
+      <td><a href="{{ url_for('kece_detay', installation_id=a.id) }}" class="btn small">Ölçüm Gir</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
 {% if low_stock %}
 <div class="panel">
   <h2>📦 Kritik Stok Uyarıları</h2>
