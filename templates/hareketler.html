@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Hareketler{% endblock %}
+{% block content %}
+<h1>Hareket Kayıtları</h1>
+<p class="muted">Tüm stok, montaj, söküm ve sistem işlemleri kullanıcı bazlı kayıt altındadır. (Son 500 kayıt)</p>
+
+<form method="get" class="searchbar">
+  <select name="tip">
+    <option value="">Tüm işlemler</option>
+    {% for k, v in MOVEMENT_TYPES.items() %}
+    <option value="{{ k }}" {{ 'selected' if mtype == k }}>{{ v }}</option>
+    {% endfor %}
+  </select>
+  <input type="text" name="q" value="{{ q }}" placeholder="Ürün, kullanıcı veya açıklama ara...">
+  <button type="submit" class="btn">Filtrele</button>
+</form>
+
+<table>
+  <tr><th>Tarih</th><th>İşlem</th><th>Ürün</th><th>Miktar</th><th>Birim Maliyet</th><th>Kullanıcı</th><th>Açıklama</th></tr>
+  {% for m in movements %}
+  <tr>
+    <td>{{ m.created_at }}</td>
+    <td><span class="tag {{ m.type|lower }}">{{ MOVEMENT_TYPES.get(m.type, m.type) }}</span></td>
+    <td>{{ (m.item_code ~ ' — ' ~ m.item_name) if m.item_code else '—' }}</td>
+    <td>{{ m.qty if m.qty else '—' }}</td>
+    <td>{{ ("%.2f"|format(m.unit_cost) ~ ' ₺') if m.unit_cost else '—' }}</td>
+    <td>{{ m.user_name or '—' }}</td>
+    <td>{{ m.note }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="muted">Kayıt bulunamadı.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Kullanıcılar{% endblock %}
+{% block content %}
+<h1>Kullanıcı Yönetimi</h1>
+
+<div class="panel">
+  <h2>Yeni Kullanıcı</h2>
+  <form method="post" class="inline-form">
+    <input type="hidden" name="action" value="add">
+    <input type="text" name="username" placeholder="Kullanıcı adı" required>
+    <input type="text" name="full_name" placeholder="Ad Soyad" required>
+    <input type="password" name="password" placeholder="Şifre (en az 6 hane)" required minlength="6">
+    <select name="role">
+      {% for k, v in ROLES.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn primary small">Ekle</button>
+  </form>
+</div>
+
+<table>
+  <tr><th>Kullanıcı Adı</th><th>Ad Soyad</th><th>Rol</th><th>Durum</th><th>Kayıt Tarihi</th><th>İşlemler</th></tr>
+  {% for u in users %}
+  <tr>
+    <td><strong>{{ u.username }}</strong></td>
+    <td>{{ u.full_name }}</td>
+    <td>{{ ROLES.get(u.role, u.role) }}</td>
+    <td>
+      {% if u.active %}<span class="tag ok">Aktif</span>{% else %}<span class="tag danger">Pasif</span>{% endif %}
+    </td>
+    <td>{{ u.created_at }}</td>
+    <td class="actions">
+      <form method="post" style="display:inline">
+        <input type="hidden" name="action" value="toggle">
+        <input type="hidden" name="user_id" value="{{ u.id }}">
+        <button type="submit" class="btn small {{ 'warn' if u.active }}">
+          {{ 'Pasife Al' if u.active else 'Aktifleştir' }}
+        </button>
+      </form>
+      <details>
+        <summary class="btn small">Şifre Sıfırla</summary>
+        <form method="post" class="inline-form">
+          <input type="hidden" name="action" value="reset_password">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          <input type="password" name="password" placeholder="Yeni şifre" required minlength="6">
+          <button type="submit" class="btn primary small">Kaydet</button>
+        </form>
+      </details>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

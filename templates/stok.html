@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Stok{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Stok Kartları</h1>
+  {% if current_role in ('admin', 'operator') %}
+  <a href="{{ url_for('stok_yeni') }}" class="btn primary">+ Yeni Kart</a>
+  {% endif %}
+</div>
+
+<form method="get" class="searchbar">
+  <input type="text" name="q" value="{{ q }}" placeholder="Kod, ad veya tedarikçi ara...">
+  <button type="submit" class="btn">Ara</button>
+</form>
+
+<table>
+  <tr>
+    <th>Kod</th><th>Ad</th><th>Kategori</th><th>Tedarikçi</th>
+    <th>En×Boy (mm)</th><th>Birim Maliyet</th><th>Beklenen Ömür</th>
+    <th>Stok</th><th>İşlemler</th>
+  </tr>
+  {% for i in items %}
+  <tr class="{{ 'lowstock' if i.stock_qty <= i.min_stock }}">
+    <td><strong>{{ i.code }}</strong></td>
+    <td>{{ i.name }}</td>
+    <td>{{ i.category }}</td>
+    <td>{{ i.supplier }}</td>
+    <td>{{ i.width_mm|int if i.width_mm else '—' }} × {{ i.length_mm|int if i.length_mm else '—' }}</td>
+    <td>{{ "%.2f"|format(i.unit_cost) }} ₺</td>
+    <td>{{ i.expected_life_days }} gün</td>
+    <td><strong>{{ i.stock_qty }}</strong> {% if i.stock_qty <= i.min_stock %}<span class="tag danger">kritik</span>{% endif %}</td>
+    <td class="actions">
+      {% if current_role in ('admin', 'operator') %}
+      <details>
+        <summary class="btn small">Stok Girişi</summary>
+        <form method="post" action="{{ url_for('stok_giris', item_id=i.id) }}" class="inline-form">
+          <input type="number" name="qty" min="1" value="1" required title="Miktar">
+          <input type="number" name="unit_cost" step="0.01" value="{{ i.unit_cost }}" required title="Birim maliyet (₺)">
+          <input type="text" name="note" placeholder="Not / fatura no">
+          <button type="submit" class="btn primary small">Kaydet</button>
+        </form>
+      </details>
+      <a href="{{ url_for('stok_duzenle', item_id=i.id) }}" class="btn small">Düzenle</a>
+      {% endif %}
+      {% if current_role == 'admin' %}
+      <details>
+        <summary class="btn small">Düzelt</summary>
+        <form method="post" action="{{ url_for('stok_duzeltme', item_id=i.id) }}" class="inline-form">
+          <input type="number" name="new_qty" min="0" value="{{ i.stock_qty }}" required title="Yeni miktar">
+          <input type="text" name="note" placeholder="Düzeltme nedeni" required>
+          <button type="submit" class="btn warn small">Uygula</button>
+        </form>
+      </details>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="9" class="muted">Kayıtlı stok kartı yok.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

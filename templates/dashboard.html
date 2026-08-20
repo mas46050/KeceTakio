@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Ana Sayfa{% endblock %}
+{% block content %}
+<h1>Ana Sayfa</h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-value">{{ totals.running }}</div>
+    <div class="card-label">Çalışan Keçe / Elek</div>
+  </div>
+  <div class="card">
+    <div class="card-value">{{ totals.item_count }}</div>
+    <div class="card-label">Stok Kartı</div>
+  </div>
+  <div class="card">
+    <div class="card-value">{{ "%.0f"|format(totals.stock_value) }} ₺</div>
+    <div class="card-label">Depo Stok Değeri</div>
+  </div>
+  <div class="card">
+    <div class="card-value">{{ "%.0f"|format(month_cost) }} ₺</div>
+    <div class="card-label">Bu Ay Satın Alma</div>
+  </div>
+</div>
+
+{% if life_warnings %}
+<div class="panel">
+  <h2>⚠️ Ömür Uyarıları</h2>
+  <table>
+    <tr><th>Makine / Pozisyon</th><th>Ürün</th><th>Takıldı</th><th>Kalan Ömür</th></tr>
+    {% for a in life_warnings %}
+    <tr>
+      <td>{{ a.machine_name }} / {{ a.position_name }}</td>
+      <td>{{ a.item_code }} — {{ a.item_name }}</td>
+      <td>{{ a.install_date }}</td>
+      <td>
+        <div class="lifebar"><div class="fill {{ a.life.cls }}" style="width: {{ a.life.pct }}%"></div></div>
+        <small>%{{ a.life.pct }} — {{ a.life.remaining }} gün kaldı</small>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% if low_stock %}
+<div class="panel">
+  <h2>📦 Kritik Stok Uyarıları</h2>
+  <table>
+    <tr><th>Kod</th><th>Ad</th><th>Kategori</th><th>Stok</th><th>Min. Stok</th></tr>
+    {% for i in low_stock %}
+    <tr>
+      <td>{{ i.code }}</td>
+      <td>{{ i.name }}</td>
+      <td>{{ i.category }}</td>
+      <td class="danger-text"><strong>{{ i.stock_qty }}</strong></td>
+      <td>{{ i.min_stock }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>🔄 Son Hareketler</h2>
+  <table>
+    <tr><th>Tarih</th><th>İşlem</th><th>Ürün</th><th>Miktar</th><th>Kullanıcı</th><th>Açıklama</th></tr>
+    {% for m in recent %}
+    <tr>
+      <td>{{ m.created_at }}</td>
+      <td><span class="tag {{ m.type|lower }}">{{ MOVEMENT_TYPES.get(m.type, m.type) }}</span></td>
+      <td>{{ m.item_code or '—' }}</td>
+      <td>{{ m.qty if m.qty else '—' }}</td>
+      <td>{{ m.user_name or '—' }}</td>
+      <td>{{ m.note }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="muted">Henüz hareket yok. Stok kartı açıp stok girişi yaparak başlayın.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

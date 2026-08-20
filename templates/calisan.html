@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Çalışanlar{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Çalışan Keçe / Elekler</h1>
+  {% if current_role in ('admin', 'operator') %}
+  <a href="{{ url_for('montaj') }}" class="btn primary">+ Yeni Montaj</a>
+  {% endif %}
+</div>
+
+<table>
+  <tr>
+    <th>Makine / Pozisyon</th><th>Ürün</th><th>Seri No</th><th>Takılma Tarihi</th>
+    <th>Takan</th><th>Kalan Ömür</th><th>Maliyet</th>
+    {% if current_role in ('admin', 'operator') %}<th>Söküm</th>{% endif %}
+  </tr>
+  {% for a in actives %}
+  <tr>
+    <td><strong>{{ a.machine_name }}</strong> / {{ a.position_name }}</td>
+    <td>{{ a.item_code }} — {{ a.item_name }} <span class="tag">{{ a.category }}</span></td>
+    <td>{{ a.serial_no or '—' }}</td>
+    <td>{{ a.install_date }} <small class="muted">({{ a.life.elapsed }} gün önce)</small></td>
+    <td>{{ a.installed_by_name or '—' }}</td>
+    <td>
+      <div class="lifebar"><div class="fill {{ a.life.cls }}" style="width: {{ a.life.pct }}%"></div></div>
+      <small>%{{ a.life.pct }} — {{ a.life.remaining }} gün / {{ a.life.expected }} gün</small>
+    </td>
+    <td>{{ "%.2f"|format(a.unit_cost or 0) }} ₺</td>
+    {% if current_role in ('admin', 'operator') %}
+    <td class="actions">
+      <details>
+        <summary class="btn small warn">Söküm</summary>
+        <form method="post" action="{{ url_for('sokum', installation_id=a.id) }}" class="inline-form">
+          <input type="date" name="removed_date" value="{{ today }}" required>
+          <select name="reason">
+            {% for r in removal_reasons %}<option>{{ r }}</option>{% endfor %}
+          </select>
+          <input type="text" name="note" placeholder="Not">
+          <button type="submit" class="btn warn small"
+                  onclick="return confirm('Söküm kaydedilsin mi?')">Söküm Kaydet</button>
+        </form>
+      </details>
+    </td>
+    {% endif %}
+  </tr>
+  {% else %}
+  <tr><td colspan="8" class="muted">Şu anda çalışan keçe/elek kaydı yok. Montaj sayfasından ekleyebilirsiniz.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

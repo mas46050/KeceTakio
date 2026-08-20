@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Raporlar{% endblock %}
+{% block content %}
+<h1>Raporlar</h1>
+
+<div class="panel">
+  <h2>📅 Aylık Satın Alma Maliyeti</h2>
+  <table>
+    <tr><th>Ay</th><th>Adet</th><th>Tutar</th></tr>
+    {% for r in monthly_purchases %}
+    <tr><td>{{ r.ay }}</td><td>{{ r.adet }}</td><td>{{ "%.2f"|format(r.tutar) }} ₺</td></tr>
+    {% else %}
+    <tr><td colspan="3" class="muted">Henüz satın alma kaydı yok.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="panel">
+  <h2>🏭 Makine Bazlı Kullanım Maliyeti</h2>
+  <p class="muted">Makineye takılmış tüm keçe/eleklerin toplam maliyeti (çalışan + sökülen).</p>
+  <table>
+    <tr><th>Makine</th><th>Montaj Adedi</th><th>Toplam Maliyet</th></tr>
+    {% for r in machine_usage %}
+    <tr><td>{{ r.machine_name }}</td><td>{{ r.adet }}</td><td>{{ "%.2f"|format(r.tutar or 0) }} ₺</td></tr>
+    {% else %}
+    <tr><td colspan="3" class="muted">Henüz montaj kaydı yok.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="panel">
+  <h2>⏱️ Ömür Performansı (Sökülenler)</h2>
+  <p class="muted">Gerçekleşen ömür / beklenen ömür oranı ve günlük maliyet. %100 üzeri, beklenenden uzun çalıştı demektir.</p>
+  <table>
+    <tr>
+      <th>Makine / Pozisyon</th><th>Ürün</th><th>Takılma</th><th>Söküm</th>
+      <th>Neden</th><th>Çalıştığı Gün</th><th>Performans</th><th>Günlük Maliyet</th>
+    </tr>
+    {% for r in life_perf %}
+    <tr>
+      <td>{{ r.machine_name }} / {{ r.position_name }}</td>
+      <td>{{ r.item_code }} — {{ r.item_name }}</td>
+      <td>{{ r.install_date }}</td>
+      <td>{{ r.removed_date }}</td>
+      <td>{{ r.removal_reason }}</td>
+      <td>{{ r.actual_days }} / {{ r.expected_life_days }}</td>
+      <td>
+        <span class="tag {{ 'ok' if r.ratio >= 90 else ('warn' if r.ratio >= 60 else 'danger') }}">%{{ r.ratio }}</span>
+      </td>
+      <td>{{ r.cost_per_day }} ₺/gün</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="muted">Henüz söküm kaydı yok.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

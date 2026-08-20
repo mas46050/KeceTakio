@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Montaj{% endblock %}
+{% block content %}
+<h1>Yeni Montaj</h1>
+<p class="muted">Stoktan bir keçe/elek seçip boş bir pozisyona takın. Stoktan 1 adet düşülür.</p>
+
+{% if not empty_positions %}
+<div class="flash error">Boş pozisyon yok. Önce mevcut bir keçe/eleği sökün veya Makineler sayfasından yeni pozisyon ekleyin.</div>
+{% elif not stock_items %}
+<div class="flash error">Stokta ürün yok. Önce Stok sayfasından stok girişi yapın.</div>
+{% else %}
+<form method="post" class="form-grid">
+  <label>Pozisyon *
+    <select name="position_id" required>
+      {% for p in empty_positions %}
+      <option value="{{ p.id }}">{{ p.machine_name }} / {{ p.name }} ({{ p.category }})</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Stok Kartı *
+    <select name="item_id" required>
+      {% for i in stock_items %}
+      <option value="{{ i.id }}">{{ i.code }} — {{ i.name }} (stok: {{ i.stock_qty }})</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Takılma Tarihi
+    <input type="date" name="install_date" value="{{ today }}" required>
+  </label>
+  <label>Seri No
+    <input type="text" name="serial_no" placeholder="Üretici seri no (opsiyonel)">
+  </label>
+  <label>Beklenen Ömür (gün)
+    <input type="number" min="1" name="expected_life_days" placeholder="Boş bırakılırsa karttaki değer kullanılır">
+  </label>
+  <label class="wide">Not
+    <input type="text" name="note" placeholder="Montaj notu (opsiyonel)">
+  </label>
+  <div class="wide">
+    <button type="submit" class="btn primary">Montajı Kaydet</button>
+    <a href="{{ url_for('calisan') }}" class="btn">Vazgeç</a>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Giriş{% endblock %}
+{% block content %}
+<div class="login-box">
+  <h1>🏭 KeçeTakip</h1>
+  <p class="muted">Kâğıt fabrikası keçe &amp; elek stok ve ömür takip sistemi</p>
+  <form method="post">
+    <label>Kullanıcı Adı
+      <input type="text" name="username" required autofocus>
+    </label>
+    <label>Şifre
+      <input type="password" name="password" required>
+    </label>
+    <button type="submit" class="btn primary full">Giriş Yap</button>
+  </form>
+</div>
+{% endblock %}
