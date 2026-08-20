@@ -1,54 +1,104 @@
-# 🏭 KeçeTakip
+# 🏭 KeçeTakip — Elek & Keçe Takip Yönetim Sistemi
 
-Kâğıt fabrikaları için **keçe & elek stok, çalışma durumu, kalan ömür ve maliyet takip** programı.
+Kâğıt fabrikaları için profesyonel, modern, mobil uyumlu ve online çalışan **elek & keçe
+stok, montaj, söküm, çalışma süresi, kullanım ömrü, maliyet ve performans takip sistemi**.
+
+Next.js (React + TypeScript) · PostgreSQL (Prisma) · Kullanıcı adı + şifre ile giriş
 
 ## Özellikler
 
-- **Kullanıcı girişi ve roller** — Yönetici, Operatör ve İzleyici rolleri; kullanıcı ekleme, pasife alma, şifre sıfırlama.
-- **Stok takibi** — Keçe/elek stok kartları (kod, tedarikçi, ebat, gramaj, birim maliyet), stok girişi, stok düzeltme, minimum stok (kritik stok) uyarıları.
-- **Çalışma durumu** — Makine ve pozisyon tanımları (pres keçesi, yaş elek, kurutma eleği vb.), montaj ve söküm kayıtları; hangi pozisyonda hangi keçe/elek çalışıyor anında görülür.
-- **Kalan ömür** — Her keçe/elek için beklenen ömür (gün); takılma tarihinden itibaren kalan ömür yüzdesi renkli çubukla gösterilir, %25 altında uyarı verir.
-- **Yıkama kayıtları** — Takılı her keçe/elek için kostik yıkama, kimyasal yıkama vb. kayıtları: tarih, kullanılan kimyasal, süre ve yapan kullanıcı. Son yıkama tarihi ve toplam yıkama sayısı Çalışanlar listesinde görünür.
-- **Haftalık ölçümler** — Takılı her keçe/elek için kalınlık (mm), hava geçirgenliği (CFM), nem (%) ve vakum (kPa) ölçümleri tarih ve ölçen kullanıcı ile kaydedilir. 7 günden uzun süre ölçüm yapılmayanlar ana sayfada "ölçüm gecikti" uyarısıyla listelenir.
-- **Maliyet raporları** — Aylık satın alma maliyeti, makine bazlı kullanım maliyeti, sökülen keçe/eleklerin ömür performansı (gerçekleşen/beklenen) ve günlük maliyet analizi.
-- **Kullanıcı hareket takibi** — Stok girişi, montaj, söküm, düzeltme, kart değişikliği ve giriş/çıkış dahil tüm işlemler hangi kullanıcının yaptığı bilgisiyle kayıt altına alınır.
+- **Ana Dashboard** — Aktif/stoktaki elek-keçe sayıları, kritik stok, bu ay değiştirilen,
+  ortalama elek/keçe ömrü, toplam stok değeri, aktif toplam çalışma süresi KPI kartları;
+  yaklaşan değişimler (%80/%90/%100 ömür), son hareketler, makine durumu kartları ve
+  akıllı uyarılar (kritik stok, ömür eşikleri, yaklaşan planlı değişim).
+- **Elek/Keçe Kartı** — Her ürün benzersiz kayıt: Sistem ID + otomatik **QR kod**
+  (okutulunca detay sayfası açılır), üretici, marka, ürün kodu, seri/sipariş no, en, boy,
+  gramaj, kalınlık, geçirgenlik, konstrüksiyon, satın alma/teslim tarihi, birim fiyat +
+  para birimi (TRY/USD/EUR), tedarikçi, tahmini ömür, depo/raf konumu, notlar, ürün
+  fotoğrafı ve teknik doküman ekleri.
+- **Stok Yönetimi** — Durumlar: Yeni, Stokta, Rezerve, Makinede, Kullanılmış, Tamirde,
+  Hurda. Pozisyon başına asgari stok seviyesi; altına düşen pozisyonlar dashboard'da
+  **Kritik Stok** olarak listelenir.
+- **Montaj** — Tarih + saat, makine sayacı, montajı yapan kişi, açıklama; ürün otomatik
+  "Stokta → Makinede" geçer. Dolu pozisyona montaj engellenir ve kullanıcı uyarılır;
+  elek pozisyonuna keçe takılamaz.
+- **Söküm** — Tarih + saat, makine sayacı, yönetilebilir söküm nedenleri (planlı/plansız),
+  hasar fotoğrafı, **Kullanılabilir / Hurda kararı** (kullanılabilirse stoğa döner).
+- **Ömür Takibi** — Çalışma günü/saati, kullanılan ömür %, kalan ömür, ilerleme çubuğu;
+  pozisyon geçmişinden önceki ürünlerin ortalama/min/maks ömrü.
+- **Yıkama & Haftalık Ölçüm** *(önceki sürümden korunan artılar)* — Kostik/kimyasal
+  yıkama kayıtları (kimyasal, süre, yapan kişi) ve haftalık ölçümler (kalınlık,
+  geçirgenlik, nem, vakum).
+- **Performans & Maliyet Analizi** — Üretici / pozisyon / ürün kodu bazında ortalama-min-maks
+  ömür, plansız değişim oranı, günlük kullanım maliyeti (fiyat ÷ çalışma günü), plansız
+  değişim maliyeti, aylık/yıllık maliyet. Amaç: en uzun ömürlüyü değil **kullanım günü
+  başına en ekonomik ürünü** bulmak.
+- **Raporlama** — Tarih aralığı, tip, pozisyon, üretici, ürün kodu, neden ve durum
+  filtreleri; ömür trendi, üretici performansı, aylık değişim, neden dağılımı grafikleri;
+  **Excel (CSV) indirme** ve **PDF/yazdırma** çıktısı.
+- **Geçmiş** — Her pozisyon için kronolojik kullanım geçmişi: üretici, seri no, montaj,
+  söküm, çalışma günü, değişim nedeni, maliyet, günlük maliyet.
+- **Kullanıcı & Yetki** — Roller: **Yönetici** (tümü), **Bakım** (montaj/söküm/teknik
+  kayıt), **Operatör** (görüntüleme + yıkama/ölçüm), **Görüntüleyici** (salt okunur).
+  Kullanıcı oluşturma/silme, şifre ve rol değiştirme yönetici panelinden.
+- **İşlem Geçmişi (Audit Log)** — Kim, ne zaman, hangi kaydı değiştirdi; filtrelenebilir.
+- **Veri Güvenliği** — Soft-delete (geçmiş silinmez), kritik işlemlerde onay ekranı,
+  bcrypt şifreleme, imzalı oturum çerezi.
+- **Global Arama** — Üst çubuktan seri no, ürün kodu, üretici, pozisyon, barkod/QR araması.
+- **Mobil Uyumlu** — Masaüstü/tablet/telefonda responsive; mobil girişte otomatik zoom yok;
+  tarih-saat gösterimi Türkiye formatında (Europe/Istanbul).
 
 ## Kurulum
 
-Python 3.9+ gereklidir.
+Gereksinimler: Node.js 20+, PostgreSQL 14+.
 
 ```bash
-pip install -r requirements.txt
-python app.py
+# 1) Veritabanı oluşturun (örnek)
+createdb kecetakip
+
+# 2) Ortam değişkenleri
+cp .env.example .env
+#    .env içinde DATABASE_URL ve SESSION_SECRET değerlerini düzenleyin
+
+# 3) Bağımlılıklar + şema + başlangıç verileri
+npm install
+npx prisma db push
+npm run db:seed
+
+# 4) Çalıştırma
+npm run build
+npm start          # http://localhost:3000
 ```
 
-Tarayıcıdan `http://localhost:5000` adresine girin.
+Geliştirme için `npm run dev`.
 
-**Varsayılan giriş:** kullanıcı adı `admin`, şifre `admin123`
-> İlk girişten sonra Kullanıcılar sayfasından şifreyi mutlaka değiştirin.
+**Varsayılan giriş:** `admin` / `admin123` — ilk girişten sonra Kullanıcılar sayfasından
+şifreyi mutlaka değiştirin.
 
-Veritabanı (`kecetakip.db`) SQLite dosyası olarak otomatik oluşturulur. İlk açılışta örnek bir makine (PM-1) ve tipik pozisyonlar hazır gelir; Makineler sayfasından kendi makine ve pozisyonlarınızı ekleyebilirsiniz.
+Seed; örnek pozisyonları (Alt/Üst Elek, Forming Fabric 1-2, 1-4. Press Keçesi), 13 söküm
+nedenini ve iki örnek ürünü yükler. Pozisyonlar, nedenler, üreticiler ve tedarikçiler
+yönetici panelinden tamamen yönetilebilir.
 
-## Kullanım Akışı
+## Veritabanı Mimarisi
 
-1. **Stok** sayfasından keçe/elek kartlarını açın (beklenen ömür ve birim maliyeti girin).
-2. Kart üzerinden **Stok Girişi** yapın (miktar + güncel birim maliyet).
-3. **Montaj** sayfasından stoktaki ürünü boş bir pozisyona takın — stoktan otomatik düşer.
-4. **Çalışanlar** sayfasında kalan ömürleri izleyin; her satırdaki **Yıkama / Ölçüm** bağlantısından detay sayfasına girip yıkama ve haftalık ölçüm kayıtlarını ekleyin.
-5. Ömrü dolan/yıpranan ürün için **Söküm** kaydedin (neden seçilir).
-6. **Raporlar** sayfasından maliyet ve ömür performansını takip edin.
-7. **Hareketler** sayfasında kim, ne zaman, ne yaptı görün.
+Prisma şeması (`prisma/schema.prisma`) ilişkisel modeli tanımlar:
 
-## Roller
+`users` · `positions` (ekipman pozisyonları) · `products` (elek/keçe kartları) ·
+`installations` (montaj + söküm = kullanım dönemi) · `washes` (yıkamalar) ·
+`measurements` (haftalık ölçümler) · `manufacturers` · `suppliers` ·
+`failure_reasons` (söküm nedenleri) · `attachments` (foto/doküman, DB'de saklanır) ·
+`audit_logs` (işlem geçmişi) · `stock_movements` (stok hareketleri)
 
-| Rol | Yetkiler |
-|---|---|
-| Yönetici (admin) | Tüm işlemler + kullanıcı yönetimi + stok düzeltme |
-| Operatör | Stok kartı, stok girişi, montaj, söküm, makine/pozisyon ekleme |
-| İzleyici | Yalnızca görüntüleme |
+Tüm silmeler soft-delete'tir (`deletedAt`); ürün ve pozisyon geçmişi asla kaybolmaz.
+Yapı, ileride başka makine ekipmanlarının (valsler, bıçaklar vb.) eklenebilmesi için
+pozisyon/ürün tipi üzerinden ölçeklenebilir tasarlandı.
 
-## Notlar
+## Dağıtım (internet üzerinden erişim)
 
-- Üretim ortamında `SECRET_KEY` ortam değişkenini kendi gizli anahtarınızla ayarlayın.
-- Veritabanı dosyasının konumu `KECETAKIP_DB` ortam değişkeni ile değiştirilebilir.
-- Uygulama fabrika içi ağda (intranet) kullanım için tasarlanmıştır; internete açacaksanız bir ters vekil (nginx + HTTPS) arkasında çalıştırın.
+Uygulama standart bir Next.js uygulamasıdır; `output: "standalone"` ile derlenir.
+Bir VPS'te `npm run build && npm start` + nginx/Caddy ters vekil (HTTPS) arkasında,
+ya da Vercel/Railway/Render gibi platformlarda `DATABASE_URL`'i yönetilen bir
+PostgreSQL'e (Neon, Supabase, RDS...) yönlendirerek yayınlanabilir. Böylece her
+bilgisayar, tablet ve telefondan aynı verilere erişilir.
+
+> Eski Flask/SQLite sürümü `legacy/` klasöründe saklanmaktadır.

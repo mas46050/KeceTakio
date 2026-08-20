@@ -1,0 +1,103 @@
+import { prisma } from "@/lib/db";
+import { requireSession } from "@/lib/auth";
+import { fmtDateTime } from "@/lib/format";
+import { Flash } from "@/components/ui";
+
+export const dynamic = "force-dynamic";
+
+const ACTION_LABELS: Record<string, string> = {
+  GIRIS: "Stok Girişi",
+  MONTAJ: "Montaj",
+  SOKUM: "Söküm",
+  YIKAMA: "Yıkama",
+  OLCUM: "Ölçüm",
+  DURUM: "Durum Değişikliği",
+  TANIM: "Tanım / Kart",
+  SISTEM: "Sistem",
+};
+
+const ACTION_COLORS: Record<string, string> = {
+  GIRIS: "green",
+  MONTAJ: "blue",
+  SOKUM: "red",
+  YIKAMA: "cyan",
+  OLCUM: "purple",
+  DURUM: "yellow",
+  TANIM: "gray",
+  SISTEM: "gray",
+};
+
+export default async function AuditPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  await requireSession();
+  const sp = await searchParams;
+  const action = sp.tip && ACTION_LABELS[sp.tip] ? sp.tip : undefined;
+  const q = (sp.q ?? "").trim();
+
+  const logs = await prisma.auditLog.findMany({
+    where: {
+      ...(action ? { action } : {}),
+      ...(q
+        ? {
+            OR: [
+              { description: { contains: q, mode: "insensitive" } },
+              { user: { fullName: { contains: q, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: { id: "desc" },
+    take: 500,
+    include: { user: { select: { fullName: true, username: true } } },
+  });
+
+  return (
+    <>
+      <Flash sp={sp} />
+      <h1>İşlem Geçmişi (Audit Log)</h1>
+      <p className="muted">
+        Kim, ne zaman, hangi işlemi yaptı — son 500 kayıt. Tüm montaj, söküm, stok ve tanım
+        değişiklikleri kullanıcı bazlı kayıt altındadır.
+      </p>
+
+      <form method="get" className="filters no-print">
+        <label>
+          İşlem Tipi
+          <select name="tip" defaultValue={action ?? ""}>
+            <option value="">Tümü</option>
+            {Object.entries(ACTION_LABELS).map(([k, v]) => (
+              <option key={k} value={k}>{v}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Ara
+          <input type="search" name="q" defaultValue={q} placeholder="Açıklama veya kullanıcı..." />
+        </label>
+        <button className="btn" type="submit">Filtrele</button>
+      </form>
+
+      <div className="panel table-wrap">
+        <table>
+          <thead>
+            <tr><th>Tarih / Saat</th><th>Kullanıcı</th><th>İşlem</th><th>Açıklama</th></tr>
+          </thead>
+          <tbody>
+            {logs.map((l) => (
+              <tr key={l.id}>
+                <td style={{ whiteSpace: "nowrap" }}>{fmtDateTime(l.createdAt)}</td>
+                <td>{l.user ? l.user.fullName : "—"}</td>
+                <td><span className={`badge ${ACTION_COLORS[l.action] ?? "gray"}`}>{ACTION_LABELS[l.action] ?? l.action}</span></td>
+                <td>{l.description}</td>
+              </tr>
+            ))}
+            {logs.length === 0 && <tr><td colSpan={4} className="muted">Kayıt bulunamadı.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}

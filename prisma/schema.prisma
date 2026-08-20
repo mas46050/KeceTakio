@@ -1,0 +1,268 @@
+// KeçeTakip — Elek & Keçe Takip Yönetim Sistemi veritabanı şeması
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Roller: Yönetici (tüm yetkiler), Bakım (montaj/söküm/teknik kayıt),
+// Operatör (görüntüleme + izin verilen kayıtlar), İzleyici (salt okunur)
+enum Role {
+  YONETICI
+  BAKIM
+  OPERATOR
+  IZLEYICI
+}
+
+enum MaterialType {
+  ELEK
+  KECE
+}
+
+enum ProductStatus {
+  YENI
+  STOKTA
+  REZERVE
+  MAKINEDE
+  KULLANILMIS
+  TAMIRDE
+  HURDA
+}
+
+enum RemovalDecision {
+  KULLANILABILIR
+  HURDA
+}
+
+enum AttachmentKind {
+  FOTO
+  DOKUMAN
+  HASAR
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  passwordHash String
+  fullName     String
+  role         Role      @default(OPERATOR)
+  active       Boolean   @default(true)
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  installations  Installation[]  @relation("InstalledBy")
+  removals       Installation[]  @relation("RemovedBy")
+  auditLogs      AuditLog[]
+  stockMovements StockMovement[]
+  washes         Wash[]
+  measurements   Measurement[]
+  attachments    Attachment[]
+}
+
+model Position {
+  id          Int          @id @default(autoincrement())
+  name        String
+  type        MaterialType
+  machineName String       @default("PM-1")
+  minStock    Int          @default(1) // bu pozisyon için stokta bulunması gereken asgari yedek
+  sortOrder   Int          @default(0)
+  deletedAt   DateTime?
+
+  products      Product[]
+  installations Installation[]
+
+  @@unique([machineName, name])
+}
+
+model Manufacturer {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  deletedAt DateTime?
+  products  Product[]
+}
+
+model Supplier {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  deletedAt DateTime?
+  products  Product[]
+}
+
+model FailureReason {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  planned   Boolean   @default(false) // planlı değişim mi (plansız değişim oranı için)
+  sortOrder Int       @default(0)
+  deletedAt DateTime?
+
+  installations Installation[]
+}
+
+// Her elek/keçe benzersiz bir kayıttır (adet bazlı takip).
+model Product {
+  id     Int           @id @default(autoincrement())
+  code   String        @unique // Sistem ID / barkod-QR içeriği: ELK-0001, KCE-0001
+  type   MaterialType
+  status ProductStatus @default(YENI)
+
+  positionId     Int? // hedeflenen / uyumlu pozisyon
+  manufacturerId Int?
+  supplierId     Int?
+
+  brand       String @default("")
+  productCode String @default("") // üretici ürün kodu
+  serialNo    String @default("")
+  orderNo     String @default("")
+
+  widthMm      Float?
+  lengthMm     Float?
+  gsm          Float?
+  thicknessMm  Float?
+  permeability Float? // CFM
+  construction String @default("") // malzeme / konstrüksiyon
+
+  purchaseDate DateTime?
+  deliveryDate DateTime?
+  stockDate    DateTime? // stok giriş tarihi
+
+  unitPrice        Decimal @default(0) @db.Decimal(14, 2)
+  currency         String  @default("TRY")
+  expectedLifeDays Int     @default(60)
+
+  warehouseLocation String @default("")
+  shelfLocation     String @default("")
+  notes             String @default("")
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  position       Position?       @relation(fields: [positionId], references: [id])
+  manufacturer   Manufacturer?   @relation(fields: [manufacturerId], references: [id])
+  supplier       Supplier?       @relation(fields: [supplierId], references: [id])
+  installations  Installation[]
+  attachments    Attachment[]
+  stockMovements StockMovement[]
+
+  @@index([status])
+  @@index([type])
+}
+
+// Montaj + söküm tek kayıtta: bir ürünün bir pozisyondaki çalışma dönemi.
+model Installation {
+  id         Int @id @default(autoincrement())
+  productId  Int
+  positionId Int
+
+  installDate         DateTime
+  machineCounterStart Float?
+  expectedLifeDays    Int // montaj anındaki tahmini ömür (gün)
+  installNote         String @default("")
+  installedById       Int?
+
+  removeDate        DateTime?
+  machineCounterEnd Float?
+  failureReasonId   Int?
+  removalNote       String           @default("")
+  removalDecision   RemovalDecision?
+  removedById       Int?
+
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  product       Product        @relation(fields: [productId], references: [id])
+  position      Position       @relation(fields: [positionId], references: [id])
+  installedBy   User?          @relation("InstalledBy", fields: [installedById], references: [id])
+  removedBy     User?          @relation("RemovedBy", fields: [removedById], references: [id])
+  failureReason FailureReason? @relation(fields: [failureReasonId], references: [id])
+  washes        Wash[]
+  measurements  Measurement[]
+  attachments   Attachment[]
+
+  @@index([positionId, active])
+  @@index([productId])
+}
+
+// Kostik / kimyasal yıkama kayıtları
+model Wash {
+  id             Int      @id @default(autoincrement())
+  installationId Int
+  washDate       DateTime
+  washType       String   @default("Kostik yıkama")
+  chemical       String   @default("")
+  durationMin    Int?
+  note           String   @default("")
+  userId         Int?
+  createdAt      DateTime @default(now())
+
+  installation Installation @relation(fields: [installationId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+}
+
+// Haftalık ölçümler
+model Measurement {
+  id              Int      @id @default(autoincrement())
+  installationId  Int
+  measureDate     DateTime
+  thicknessMm     Float?
+  permeabilityCfm Float?
+  moisturePct     Float?
+  vacuumKpa       Float?
+  note            String   @default("")
+  userId          Int?
+  createdAt       DateTime @default(now())
+
+  installation Installation @relation(fields: [installationId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+}
+
+// Ürün fotoğrafı, teknik doküman, hasar fotoğrafı
+model Attachment {
+  id             Int            @id @default(autoincrement())
+  productId      Int?
+  installationId Int?
+  kind           AttachmentKind @default(FOTO)
+  filename       String
+  mime           String
+  data           Bytes
+  userId         Int?
+  createdAt      DateTime       @default(now())
+
+  product      Product?      @relation(fields: [productId], references: [id])
+  installation Installation? @relation(fields: [installationId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
+}
+
+// İşlem geçmişi (audit log)
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  action      String // GIRIS, MONTAJ, SOKUM, YIKAMA, OLCUM, TANIM, DURUM, SISTEM ...
+  entity      String   @default("")
+  entityId    Int?
+  description String
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([action])
+}
+
+// Stok hareketleri (giriş / çıkış / durum değişimi)
+model StockMovement {
+  id        Int      @id @default(autoincrement())
+  productId Int?
+  type      String // GIRIS, MONTAJ, SOKUM, DURUM, HURDA ...
+  qty       Int      @default(1)
+  note      String   @default("")
+  userId    Int?
+  createdAt DateTime @default(now())
+
+  product Product? @relation(fields: [productId], references: [id])
+  user    User?    @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+}
