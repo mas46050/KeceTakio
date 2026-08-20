@@ -4,6 +4,9 @@ import { requireSession } from "@/lib/auth";
 import { getPermSet } from "@/lib/perm";
 import { redirect } from "next/navigation";
 import { fmtDate, fmtMoney } from "@/lib/format";
+import { getLocale } from "@/lib/locale-server";
+import { tFor } from "@/lib/i18n";
+
 import { Flash, StatusBadge, TypeBadge } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +21,9 @@ export default async function StockPage({
   const s = await requireSession();
   const perms = await getPermSet(s.role);
   if (!perms.has("sayfa_stok")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
+  const locale = await getLocale();
+  const t = tFor(locale);
+
   const sp = await searchParams;
   const type = sp.tip === "ELEK" || sp.tip === "KECE" ? sp.tip : undefined;
 
@@ -55,46 +61,46 @@ export default async function StockPage({
 
   return (
     <>
-      <Flash sp={sp} />
+      <Flash sp={sp} t={t} />
       <div className="page-head">
-        <h1>Stok Yönetimi</h1>
+        <h1>{t("Stok Yönetimi")}</h1>
         {perms.has("islem_urun") && (
-          <Link href="/urunler/yeni" className="btn primary">+ Stok Girişi</Link>
+          <Link href="/urunler/yeni" className="btn primary">{t("+ Stok Girişi")}</Link>
         )}
       </div>
 
       <div className="kpi-grid">
         <div className="kpi info">
           <div className="v">{items.filter((i) => i.type === "ELEK" && (i.status === "YENI" || i.status === "STOKTA")).length}</div>
-          <div className="l">Stoktaki Elek</div>
+          <div className="l">{t("Stoktaki Elek")}</div>
         </div>
         <div className="kpi info">
           <div className="v">{items.filter((i) => i.type === "KECE" && (i.status === "YENI" || i.status === "STOKTA")).length}</div>
-          <div className="l">Stoktaki Keçe</div>
+          <div className="l">{t("Stoktaki Keçe")}</div>
         </div>
         <div className={`kpi ${critical.length ? "danger" : ""}`}>
           <div className="v">{critical.length}</div>
-          <div className="l">Kritik Stok (Pozisyon)</div>
+          <div className="l">{t("Kritik Stok (Pozisyon)")}</div>
         </div>
         <div className="kpi">
           <div className="v" style={{ fontSize: 17 }}>
             {[...totalByCurrency.entries()].map(([c, v]) => fmtMoney(v, c)).join(" + ") || fmtMoney(0)}
           </div>
-          <div className="l">Toplam Stok Değeri</div>
+          <div className="l">{t("Toplam Stok Değeri")}</div>
         </div>
       </div>
 
       {critical.length > 0 && (
         <div className="panel" style={{ borderLeft: "4px solid var(--danger)" }}>
-          <h2>⚠️ Kritik Stok</h2>
+          <h2>⚠️ {t("Kritik Stok")}</h2>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Pozisyon</th><th>Tip</th><th>Stoktaki Yedek</th><th>Asgari</th></tr></thead>
+              <thead><tr><th>{t("Pozisyon")}</th><th>{t("Tip")}</th><th>{t("Stoktaki Yedek")}</th><th>{t("Asgari")}</th></tr></thead>
               <tbody>
                 {critical.map((pos) => (
                   <tr key={pos.id}>
                     <td>{pos.machineName} / {pos.name}</td>
-                    <td><TypeBadge type={pos.type} /></td>
+                    <td><TypeBadge type={pos.type} locale={locale} /></td>
                     <td style={{ color: "var(--danger)", fontWeight: 700 }}>{availByPos.get(pos.id) ?? 0}</td>
                     <td>{pos.minStock}</td>
                   </tr>
@@ -107,30 +113,30 @@ export default async function StockPage({
 
       <form method="get" className="filters no-print">
         <label>
-          Tip
+          {t("Tip")}
           <select name="tip" defaultValue={type ?? ""}>
-            <option value="">Tümü</option>
-            <option value="ELEK">Elek</option>
-            <option value="KECE">Keçe</option>
+            <option value="">{t("Tümü")}</option>
+            <option value="ELEK">{t("Elek")}</option>
+            <option value="KECE">{t("Keçe")}</option>
           </select>
         </label>
-        <button className="btn" type="submit">Filtrele</button>
+        <button className="btn" type="submit">{t("Filtrele")}</button>
       </form>
 
       <div className="panel table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Ürün</th><th>Tip</th><th>Pozisyon</th><th>Üretici</th><th>Seri No</th>
-              <th>Stok Girişi</th><th>Miktar</th><th>Birim Fiyat</th><th>Toplam Değer</th>
-              <th>Depo</th><th>Raf</th><th>Durum</th>
+              <th>{t("Ürün")}</th><th>{t("Tip")}</th><th>{t("Pozisyon")}</th><th>{t("Üretici")}</th><th>{t("Seri No")}</th>
+              <th>{t("Stok Girişi")}</th><th>{t("Miktar")}</th><th>{t("Birim Fiyat")}</th><th>{t("Toplam Değer")}</th>
+              <th>{t("Depo")}</th><th>{t("Raf")}</th><th>{t("Durum")}</th>
             </tr>
           </thead>
           <tbody>
             {items.map((p) => (
               <tr key={p.id}>
                 <td><Link href={`/urunler/${p.id}`}><strong>{p.code}</strong></Link><br /><small>{p.brand} {p.productCode}</small></td>
-                <td><TypeBadge type={p.type} /></td>
+                <td><TypeBadge type={p.type} locale={locale} /></td>
                 <td>{p.position?.name ?? "—"}</td>
                 <td>{p.manufacturer?.name ?? "—"}</td>
                 <td>{p.serialNo || "—"}</td>
@@ -140,10 +146,10 @@ export default async function StockPage({
                 <td style={{ whiteSpace: "nowrap" }}>{fmtMoney(Number(p.unitPrice), p.currency)}</td>
                 <td>{p.warehouseLocation || "—"}</td>
                 <td>{p.shelfLocation || "—"}</td>
-                <td><StatusBadge status={p.status} /></td>
+                <td><StatusBadge status={p.status} locale={locale} /></td>
               </tr>
             ))}
-            {items.length === 0 && <tr><td colSpan={12} className="muted">Stokta ürün yok.</td></tr>}
+            {items.length === 0 && <tr><td colSpan={12} className="muted">{t("Stokta ürün yok.")}</td></tr>}
           </tbody>
         </table>
       </div>

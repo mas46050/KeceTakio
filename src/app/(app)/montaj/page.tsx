@@ -4,6 +4,9 @@ import { getPermSet } from "@/lib/perm";
 import { redirect } from "next/navigation";
 import { montajAction } from "@/lib/actions";
 import { toDateInputValue } from "@/lib/format";
+import { getLocale } from "@/lib/locale-server";
+import { tFor } from "@/lib/i18n";
+
 import { Flash } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +19,8 @@ export default async function MontajPage({
   const s = await requireSession();
   const perms = await getPermSet(s.role);
   if (!perms.has("islem_montaj")) redirect("/?hata=Montaj%20i%C3%A7in%20yetkiniz%20yok.");
+  const locale = await getLocale();
+  const t = tFor(locale);
   const sp = await searchParams;
   const preselect = sp.urun ? Number(sp.urun) : undefined;
 
@@ -43,64 +48,62 @@ export default async function MontajPage({
 
   return (
     <>
-      <Flash sp={sp} />
-      <h1>Montaj Yap</h1>
+      <Flash sp={sp} t={t} />
+      <h1>{t("Montaj Yap")}</h1>
       <p className="muted">
-        Stoktaki bir elek/keçe makineye takılır; ürün otomatik olarak
-        &quot;Stokta → Makinede&quot; durumuna geçer. Dolu pozisyona montaj yapılmadan önce
-        mevcut ürünün sökümü kaydedilmelidir.
+        {t("Stoktaki bir elek/keçe makineye takılır; ürün otomatik olarak \"Stokta → Makinede\" durumuna geçer. Dolu pozisyona montaj yapılmadan önce mevcut ürünün sökümü kaydedilmelidir.")}
       </p>
 
       {products.length === 0 ? (
-        <div className="flash err">Montaja uygun (stokta) ürün yok. Önce stok girişi yapın.</div>
+        <div className="flash err">{t("Montaja uygun (stokta) ürün yok. Önce stok girişi yapın.")}</div>
       ) : (
         <form action={montajAction} className="panel form-grid">
           <label>
-            Malzeme *
+            {t("Malzeme")} *
             <select name="productId" required defaultValue={preselect ?? ""}>
-              <option value="">— Seçiniz —</option>
+              <option value="">{t("— Seçiniz —")}</option>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.code} — {p.manufacturer?.name ?? ""} {p.productCode}{" "}
-                  {p.serialNo ? `(${p.serialNo})` : ""} [{p.type === "ELEK" ? "Elek" : "Keçe"}]
+                  {p.serialNo ? `(${p.serialNo})` : ""} [{t(p.type === "ELEK" ? "Elek" : "Keçe")}]
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Pozisyon *
+            {t("Pozisyon")} *
             <select name="positionId" required>
-              <option value="">— Seçiniz —</option>
+              <option value="">{t("— Seçiniz —")}</option>
               {positions.map((pos) => (
                 <option key={pos.id} value={pos.id}>
-                  {pos.machineName} / {pos.name} ({pos.type === "ELEK" ? "Elek" : "Keçe"})
-                  {occupied.has(pos.id) ? " — DOLU" : ""}
+                  {pos.machineName} / {pos.name} ({t(pos.type === "ELEK" ? "Elek" : "Keçe")})
+                  {occupied.has(pos.id) ? ` — ${t("DOLU")}` : ""}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Montaj Tarihi *
+            {t("Montaj Tarihi")} *
             <input type="date" name="installDate" required defaultValue={toDateInputValue(now)} />
           </label>
           <label>
-            Montaj Saati
+            {t("Montaj Saati")}
             <input type="time" name="installTime" defaultValue={timeNow} />
           </label>
           <label>
-            Makine Sayacı
+            {t("Makine Sayacı")}
             <input type="text" inputMode="decimal" name="machineCounter" placeholder="örn. 128450" />
           </label>
           <label>
-            Tahmini Ömür (gün)
-            <input type="text" inputMode="numeric" name="expectedLifeDays" placeholder="Boşsa karttaki değer kullanılır" />
+            {t("Ömür (gün)")}
+            <input type="text" inputMode="numeric" name="expectedLifeDays" placeholder={t("Boşsa karttaki değer kullanılır")} />
           </label>
           <label className="wide">
-            Açıklama
-            <input type="text" name="note" placeholder="Montaj notu (opsiyonel)" />
+            {t("Açıklama")}
+            <input type="text" name="note" placeholder={t("Montaj notu (opsiyonel)")} />
           </label>
           <div className="wide">
-            <button type="submit" className="btn primary">Montajı Kaydet</button>
+            <button type="submit" className="btn primary">{t("Montajı Kaydet")}</button>
           </div>
         </form>
       )}

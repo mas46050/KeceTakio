@@ -1,10 +1,10 @@
 "use client";
 
 // Tarayıcının yazdırma diyaloğunu açar; "PDF olarak kaydet" ile PDF çıktı alınır
-export default function PrintButton() {
+export default function PrintButton({ label = "PDF / Yazdır" }: { label?: string }) {
   return (
     <button className="btn no-print" type="button" onClick={() => window.print()}>
-      🖨 PDF / Yazdır
+      🖨 {label}
     </button>
   );
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/lib/actions";
+import { LOCALES, THEME_COOKIE, tFor } from "@/lib/i18n";
 
 type NavItem = { href: string; label: string };
 
@@ -11,15 +12,28 @@ export default function NavShell({
   items,
   fullName,
   roleLabel,
+  locale,
+  theme,
   children,
 }: {
   items: NavItem[];
   fullName: string;
   roleLabel: string;
+  locale: string;
+  theme: "light" | "dark";
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [curTheme, setCurTheme] = useState(theme);
   const pathname = usePathname();
+  const t = tFor(locale);
+
+  const toggleTheme = () => {
+    const next = curTheme === "dark" ? "light" : "dark";
+    setCurTheme(next);
+    document.documentElement.dataset.theme = next;
+    document.cookie = `${THEME_COOKIE}=${next}; path=/; max-age=${60 * 60 * 24 * 365}`;
+  };
 
   return (
     <div className="shell">
@@ -46,7 +60,7 @@ export default function NavShell({
           <div className="name">{fullName}</div>
           <div>{roleLabel}</div>
           <form action={logoutAction} style={{ marginTop: 8 }}>
-            <button className="btn sm" type="submit">Çıkış Yap</button>
+            <button className="btn sm" type="submit">{t("Çıkış Yap")}</button>
           </form>
         </div>
       </aside>
@@ -55,7 +69,7 @@ export default function NavShell({
           <button
             className="menu-btn"
             onClick={() => setOpen(!open)}
-            aria-label="Menüyü aç"
+            aria-label="Menü"
           >
             ☰
           </button>
@@ -63,10 +77,31 @@ export default function NavShell({
             <input
               type="search"
               name="q"
-              placeholder="Ara: seri no, ürün kodu, üretici, pozisyon, barkod..."
+              placeholder={t("Ara: seri no, ürün kodu, üretici, pozisyon, barkod...")}
             />
-            <button className="btn" type="submit">Ara</button>
+            <button className="btn" type="submit">{t("Ara")}</button>
           </form>
+          <span className="spacer" style={{ flex: 1 }} />
+          <div className="lang-flags" role="group" aria-label="Dil / Language">
+            {LOCALES.map((l) => (
+              <a
+                key={l.code}
+                href={`/api/dil/${l.code}?geri=${encodeURIComponent(pathname)}`}
+                className={`flag ${locale === l.code ? "active" : ""}`}
+                title={l.name}
+              >
+                {l.flag}
+              </a>
+            ))}
+          </div>
+          <button
+            className="theme-btn"
+            onClick={toggleTheme}
+            title={curTheme === "dark" ? "Aydınlık tema / Light" : "Karanlık tema / Dark"}
+            aria-label="Tema"
+          >
+            {curTheme === "dark" ? "☀️" : "🌙"}
+          </button>
         </header>
         <div className="content">{children}</div>
       </div>

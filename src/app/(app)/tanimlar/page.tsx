@@ -9,6 +9,9 @@ import {
   deleteReasonAction,
 } from "@/lib/actions";
 import { Flash } from "@/components/ui";
+import { getLocale } from "@/lib/locale-server";
+import { tFor } from "@/lib/i18n";
+
 import ConfirmButton from "@/components/ConfirmButton";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +24,8 @@ export default async function DefinitionsPage({
   const s = await requireSession();
   const perms = await getPermSet(s.role);
   if (!perms.has("islem_tanim")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
+  const locale = await getLocale();
+  const t = tFor(locale);
   const sp = await searchParams;
 
   const [reasons, manufacturers, suppliers] = await Promise.all([
@@ -46,34 +51,34 @@ export default async function DefinitionsPage({
 
   return (
     <>
-      <Flash sp={sp} />
-      <h1>Tanımlar</h1>
+      <Flash sp={sp} t={t} />
+      <h1>{t("Tanımlar")}</h1>
 
       <div className="panel-grid">
         <div className="panel">
-          <h2>Söküm / Değişim Nedenleri</h2>
+          <h2>{t("Söküm / Değişim Nedenleri")}</h2>
           <form action={createReasonAction} className="inline-form">
-            <label>Neden<input type="text" name="name" required placeholder="örn. Vakum hasarı" /></label>
-            <label>Tür
+            <label>{t("Neden")}<input type="text" name="name" required /></label>
+            <label>{t("Tür")}
               <select name="planned">
-                <option value="0">Plansız</option>
-                <option value="1">Planlı</option>
+                <option value="0">{t("Plansız")}</option>
+                <option value="1">{t("Planlı")}</option>
               </select>
             </label>
-            <button className="btn primary sm" type="submit">Ekle</button>
+            <button className="btn primary sm" type="submit">{t("Ekle")}</button>
           </form>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Neden</th><th>Tür</th><th>Kullanım</th><th></th></tr></thead>
+              <thead><tr><th>{t("Neden")}</th><th>{t("Tür")}</th><th>{t("Kullanım")}</th><th></th></tr></thead>
               <tbody>
                 {reasons.map((r) => (
                   <tr key={r.id}>
                     <td>{r.name}</td>
-                    <td>{r.planned ? <span className="badge green">Planlı</span> : <span className="badge orange">Plansız</span>}</td>
+                    <td>{r.planned ? <span className="badge green">{t("Planlı")}</span> : <span className="badge orange">{t("Plansız")}</span>}</td>
                     <td>{r._count.installations}</td>
                     <td>
                       <form action={deleteReasonAction.bind(null, r.id)}>
-                        <ConfirmButton message={`"${r.name}" nedeni silinecek. Emin misiniz?`} className="btn sm">Sil</ConfirmButton>
+                        <ConfirmButton message={`"${r.name}" — ${t("Sil")}?`} className="btn sm">{t("Sil")}</ConfirmButton>
                       </form>
                     </td>
                   </tr>
@@ -84,14 +89,14 @@ export default async function DefinitionsPage({
         </div>
 
         <div className="panel">
-          <h2>Üreticiler</h2>
+          <h2>{t("Üreticiler")}</h2>
           <form action={createManufacturer} className="inline-form">
-            <label>Üretici Adı<input type="text" name="name" required /></label>
-            <button className="btn primary sm" type="submit">Ekle</button>
+            <label>{t("Üretici Adı")}<input type="text" name="name" required /></label>
+            <button className="btn primary sm" type="submit">{t("Ekle")}</button>
           </form>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Üretici</th><th>Ürün Sayısı</th><th></th></tr></thead>
+              <thead><tr><th>{t("Üretici")}</th><th>{t("Ürün Sayısı")}</th><th></th></tr></thead>
               <tbody>
                 {manufacturers.map((m) => (
                   <tr key={m.id}>
@@ -99,7 +104,7 @@ export default async function DefinitionsPage({
                     <td>{m._count.products}</td>
                     <td>
                       <form action={deleteNamedAction.bind(null, "manufacturer", m.id)}>
-                        <ConfirmButton message={`"${m.name}" silinecek. Emin misiniz?`} className="btn sm">Sil</ConfirmButton>
+                        <ConfirmButton message={`"${m.name}" — ${t("Sil")}?`} className="btn sm">{t("Sil")}</ConfirmButton>
                       </form>
                     </td>
                   </tr>
@@ -108,14 +113,14 @@ export default async function DefinitionsPage({
             </table>
           </div>
 
-          <h2 style={{ marginTop: 18 }}>Tedarikçiler</h2>
+          <h2 style={{ marginTop: 18 }}>{t("Tedarikçiler")}</h2>
           <form action={createSupplier} className="inline-form">
-            <label>Tedarikçi Adı<input type="text" name="name" required /></label>
-            <button className="btn primary sm" type="submit">Ekle</button>
+            <label>{t("Tedarikçi Adı")}<input type="text" name="name" required /></label>
+            <button className="btn primary sm" type="submit">{t("Ekle")}</button>
           </form>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Tedarikçi</th><th>Ürün Sayısı</th><th></th></tr></thead>
+              <thead><tr><th>{t("Tedarikçi")}</th><th>{t("Ürün Sayısı")}</th><th></th></tr></thead>
               <tbody>
                 {suppliers.map((m) => (
                   <tr key={m.id}>
@@ -123,7 +128,7 @@ export default async function DefinitionsPage({
                     <td>{m._count.products}</td>
                     <td>
                       <form action={deleteNamedAction.bind(null, "supplier", m.id)}>
-                        <ConfirmButton message={`"${m.name}" silinecek. Emin misiniz?`} className="btn sm">Sil</ConfirmButton>
+                        <ConfirmButton message={`"${m.name}" — ${t("Sil")}?`} className="btn sm">{t("Sil")}</ConfirmButton>
                       </form>
                     </td>
                   </tr>

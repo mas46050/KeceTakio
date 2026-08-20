@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { getLocale, getTheme } from "@/lib/locale-server";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,9 +14,10 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const [locale, theme] = await Promise.all([getLocale(), getTheme()]);
   return (
-    <html lang="tr">
+    <html lang={locale} data-theme={theme}>
       <body>{children}</body>
     </html>
   );

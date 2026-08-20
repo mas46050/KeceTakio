@@ -1,6 +1,7 @@
 // Ürün kartı formu (yeni kayıt + düzenleme için ortak, server component)
 import type { Manufacturer, Position, Product, Supplier } from "@prisma/client";
 import { toDateInputValue } from "@/lib/format";
+import { tFor } from "@/lib/i18n";
 
 export default function ProductForm({
   action,
@@ -8,103 +9,106 @@ export default function ProductForm({
   positions,
   manufacturers,
   suppliers,
+  locale = "tr",
 }: {
   action: (fd: FormData) => Promise<void>;
   product?: Product | null;
   positions: Position[];
   manufacturers: Manufacturer[];
   suppliers: Supplier[];
+  locale?: string;
 }) {
   const p = product;
+  const t = tFor(locale);
   return (
     <form action={action} className="panel form-grid">
       {!p && (
         <label>
-          Malzeme Tipi *
+          {t("Malzeme Tipi")} *
           <select name="type" required defaultValue="KECE">
-            <option value="KECE">Keçe</option>
-            <option value="ELEK">Elek</option>
+            <option value="KECE">{t("Keçe")}</option>
+            <option value="ELEK">{t("Elek")}</option>
           </select>
         </label>
       )}
       <label>
-        Pozisyon
+        {t("Pozisyon")}
         <select name="positionId" defaultValue={p?.positionId ?? ""}>
-          <option value="">— Seçiniz —</option>
+          <option value="">{t("— Seçiniz —")}</option>
           {positions.map((pos) => (
             <option key={pos.id} value={pos.id}>
-              {pos.machineName} / {pos.name} ({pos.type === "ELEK" ? "Elek" : "Keçe"})
+              {pos.machineName} / {pos.name} ({t(pos.type === "ELEK" ? "Elek" : "Keçe")})
             </option>
           ))}
         </select>
       </label>
       <label>
-        Üretici
+        {t("Üretici")}
         <select name="manufacturerId" defaultValue={p?.manufacturerId ?? ""}>
-          <option value="">— Seçiniz —</option>
+          <option value="">{t("— Seçiniz —")}</option>
           {manufacturers.map((m) => (
             <option key={m.id} value={m.id}>{m.name}</option>
           ))}
         </select>
       </label>
       <label>
-        Yeni Üretici (listede yoksa)
-        <input type="text" name="newManufacturer" placeholder="Yeni üretici adı" />
+        {t("Yeni Üretici (listede yoksa)")}
+        <input type="text" name="newManufacturer" placeholder={t("Yeni üretici adı")} />
       </label>
       <label>
-        Marka
+        {t("Marka")}
         <input type="text" name="brand" defaultValue={p?.brand ?? ""} />
       </label>
       <label>
-        Ürün Kodu
+        {t("Ürün Kodu")}
         <input type="text" name="productCode" defaultValue={p?.productCode ?? ""} />
       </label>
       <label>
-        Seri Numarası
+        {t("Seri Numarası")}
         <input type="text" name="serialNo" defaultValue={p?.serialNo ?? ""} />
       </label>
       <label>
-        Sipariş Numarası
+        {t("Sipariş Numarası")}
         <input type="text" name="orderNo" defaultValue={p?.orderNo ?? ""} />
       </label>
       <label>
-        En (mm)
+        {t("En (mm)")}
         <input type="text" inputMode="decimal" name="widthMm" defaultValue={p?.widthMm ?? ""} />
       </label>
       <label>
-        Boy (mm)
+        {t("Boy (mm)")}
         <input type="text" inputMode="decimal" name="lengthMm" defaultValue={p?.lengthMm ?? ""} />
       </label>
       <label>
-        Gramaj (g/m²)
+        {t("Gramaj (g/m²)")}
         <input type="text" inputMode="decimal" name="gsm" defaultValue={p?.gsm ?? ""} />
       </label>
       <label>
-        Kalınlık (mm)
+        {t("Kalınlık (mm)")}
         <input type="text" inputMode="decimal" name="thicknessMm" defaultValue={p?.thicknessMm ?? ""} />
       </label>
       <label>
-        Geçirgenlik (CFM)
+        {t("Geçirgenlik (CFM)")}
         <input type="text" inputMode="decimal" name="permeability" defaultValue={p?.permeability ?? ""} />
       </label>
       <label className="wide">
-        Malzeme / Konstrüksiyon
+        {t("Malzeme / Konstrüksiyon")}
         <input type="text" name="construction" defaultValue={p?.construction ?? ""} />
       </label>
       <label>
-        Satın Alma Tarihi
+        {t("Satın Alma Tarihi")}
         <input type="date" name="purchaseDate" defaultValue={toDateInputValue(p?.purchaseDate)} />
       </label>
       <label>
-        Teslim Tarihi
+        {t("Teslim Tarihi")}
         <input type="date" name="deliveryDate" defaultValue={toDateInputValue(p?.deliveryDate)} />
       </label>
       <label>
-        Birim Fiyat
+        {t("Birim Fiyat")}
         <input type="text" inputMode="decimal" name="unitPrice" defaultValue={p ? Number(p.unitPrice) : ""} />
       </label>
       <label>
-        Para Birimi
+        {t("Para Birimi")}
         <select name="currency" defaultValue={p?.currency ?? "TRY"}>
           <option value="TRY">TRY (₺)</option>
           <option value="USD">USD ($)</option>
@@ -112,37 +116,37 @@ export default function ProductForm({
         </select>
       </label>
       <label>
-        Tedarikçi
+        {t("Tedarikçi")}
         <select name="supplierId" defaultValue={p?.supplierId ?? ""}>
-          <option value="">— Seçiniz —</option>
+          <option value="">{t("— Seçiniz —")}</option>
           {suppliers.map((sup) => (
             <option key={sup.id} value={sup.id}>{sup.name}</option>
           ))}
         </select>
       </label>
       <label>
-        Yeni Tedarikçi (listede yoksa)
-        <input type="text" name="newSupplier" placeholder="Yeni tedarikçi adı" />
+        {t("Yeni Tedarikçi (listede yoksa)")}
+        <input type="text" name="newSupplier" placeholder={t("Yeni tedarikçi adı")} />
       </label>
       <label>
-        Tahmini Kullanım Ömrü (gün) *
+        {t("Tahmini Kullanım Ömrü (gün)")} *
         <input type="text" inputMode="numeric" name="expectedLifeDays" required defaultValue={p?.expectedLifeDays ?? 60} />
       </label>
       <label>
-        Depo Konumu
+        {t("Depo Konumu")}
         <input type="text" name="warehouseLocation" defaultValue={p?.warehouseLocation ?? ""} />
       </label>
       <label>
-        Raf Konumu
+        {t("Raf Konumu")}
         <input type="text" name="shelfLocation" defaultValue={p?.shelfLocation ?? ""} />
       </label>
       <label className="wide">
-        Açıklama / Notlar
+        {t("Açıklama / Notlar")}
         <textarea name="notes" rows={3} defaultValue={p?.notes ?? ""} />
       </label>
       <div className="wide">
         <button type="submit" className="btn primary">
-          {p ? "Kartı Güncelle" : "Kaydet ve Stoğa Al"}
+          {p ? t("Kartı Güncelle") : t("Kaydet ve Stoğa Al")}
         </button>
       </div>
     </form>

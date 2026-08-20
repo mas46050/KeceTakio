@@ -3,6 +3,8 @@ import { requireSession } from "@/lib/auth";
 import { getPermSet } from "@/lib/perm";
 import { notFound, redirect } from "next/navigation";
 import { updateProductAction } from "@/lib/actions";
+import { getLocale } from "@/lib/locale-server";
+import { tFor } from "@/lib/i18n";
 import ProductForm from "@/components/ProductForm";
 import { Flash } from "@/components/ui";
 
@@ -20,6 +22,8 @@ export default async function EditProductPage({
   const sp = await searchParams;
   const perms = await getPermSet(s.role);
   if (!perms.has("islem_urun")) redirect(`/urunler/${id}?hata=Bu%20i%C5%9Flem%20i%C3%A7in%20yetkiniz%20yok.`);
+  const locale = await getLocale();
+  const t = tFor(locale);
   const productId = Number(id);
   const product = await prisma.product.findFirst({
     where: { id: productId, deletedAt: null },
@@ -36,14 +40,15 @@ export default async function EditProductPage({
   const action = updateProductAction.bind(null, productId);
   return (
     <>
-      <Flash sp={sp} />
-      <h1>Kart Düzenle — {product.code}</h1>
+      <Flash sp={sp} t={t} />
+      <h1>{t("Kart Düzenle")} — {product.code}</h1>
       <ProductForm
         action={action}
         product={product}
         positions={positions}
         manufacturers={manufacturers}
         suppliers={suppliers}
+        locale={locale}
       />
     </>
   );

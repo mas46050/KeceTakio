@@ -4,6 +4,9 @@ import { requireSession } from "@/lib/auth";
 import { getPermSet } from "@/lib/perm";
 import { redirect } from "next/navigation";
 import { fmtDate } from "@/lib/format";
+import { getLocale } from "@/lib/locale-server";
+import { tFor } from "@/lib/i18n";
+
 import { StatusBadge, TypeBadge } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +19,8 @@ export default async function SearchPage({
   const s = await requireSession();
   const perms = await getPermSet(s.role);
   if (!perms.has("sayfa_urunler")) redirect("/?hata=Bu%20sayfa%20i%C3%A7in%20yetkiniz%20yok.");
+  const locale = await getLocale();
+  const t = tFor(locale);
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
 
@@ -41,40 +46,40 @@ export default async function SearchPage({
 
   return (
     <>
-      <h1>Arama</h1>
+      <h1>{t("Arama")}</h1>
       <form method="get" className="filters">
         <label style={{ maxWidth: 420 }}>
-          Arama (seri no, ürün kodu, üretici, pozisyon, barkod/QR)
+          {t("Arama (seri no, ürün kodu, üretici, pozisyon, barkod/QR)")}
           <input type="search" name="q" defaultValue={q} autoFocus />
         </label>
-        <button className="btn primary" type="submit">Ara</button>
+        <button className="btn primary" type="submit">{t("Ara")}</button>
       </form>
 
       {q && (
         <div className="panel table-wrap">
-          <p className="muted">&quot;{q}&quot; için {products.length} sonuç bulundu.</p>
+          <p className="muted">&quot;{q}&quot; için {products.length} {t("sonuç bulundu.")}</p>
           <table>
             <thead>
               <tr>
-                <th>Sistem ID</th><th>Tip</th><th>Üretici</th><th>Ürün Kodu</th>
-                <th>Seri No</th><th>Pozisyon</th><th>Durum</th><th>Stok Girişi</th>
+                <th>{t("Sistem ID")}</th><th>{t("Tip")}</th><th>{t("Üretici")}</th><th>{t("Ürün Kodu")}</th>
+                <th>{t("Seri No")}</th><th>{t("Pozisyon")}</th><th>{t("Durum")}</th><th>{t("Stok Girişi")}</th>
               </tr>
             </thead>
             <tbody>
               {products.map((p) => (
                 <tr key={p.id}>
                   <td><Link href={`/urunler/${p.id}`}><strong>{p.code}</strong></Link></td>
-                  <td><TypeBadge type={p.type} /></td>
+                  <td><TypeBadge type={p.type} locale={locale} /></td>
                   <td>{p.manufacturer?.name ?? "—"}</td>
                   <td>{p.productCode || "—"}</td>
                   <td>{p.serialNo || "—"}</td>
                   <td>{p.position?.name ?? "—"}</td>
-                  <td><StatusBadge status={p.status} /></td>
+                  <td><StatusBadge status={p.status} locale={locale} /></td>
                   <td>{fmtDate(p.stockDate)}</td>
                 </tr>
               ))}
               {products.length === 0 && (
-                <tr><td colSpan={8} className="muted">Sonuç bulunamadı.</td></tr>
+                <tr><td colSpan={8} className="muted">{t("Sonuç bulunamadı.")}</td></tr>
               )}
             </tbody>
           </table>
