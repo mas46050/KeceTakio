@@ -209,3 +209,74 @@ label > input, label > select, label > textarea { margin-top: 5px; font-weight: 
   .content { padding: 0; max-width: none; }
   .panel { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
 }
+
+/* ---- Pozisyon listesi: sürükle-bırak + yerinde düzenleme ---- */
+.pos-list { display: flex; flex-direction: column; gap: 8px; }
+.pos-row {
+  display: grid;
+  grid-template-columns: 28px auto minmax(140px, 1.4fr) 90px minmax(90px, 1fr) minmax(150px, 1.2fr) auto;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: box-shadow .12s ease, border-color .12s ease;
+}
+.pos-row:hover { border-color: #b6c2d4; }
+.pos-row.dragging {
+  opacity: .65;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .22);
+  border-color: var(--accent);
+}
+.pos-row.editing {
+  grid-template-columns: 40px minmax(180px, 2fr) 90px 0px minmax(150px, 1fr) auto;
+  border-color: var(--accent);
+  background: #f8fbff;
+}
+.pos-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pos-cell { min-width: 0; }
+.pos-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+
+.drag-handle {
+  cursor: grab;
+  color: #94a3b8;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+  user-select: none;
+  padding: 6px 2px;
+  border-radius: 6px;
+}
+.drag-handle:hover { color: var(--text); background: #eef2f7; }
+.drag-handle:active { cursor: grabbing; }
+
+.trash-btn {
+  border: 1px solid #fca5a5;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+  font-size: 17px;
+  padding: 7px 9px;
+  cursor: pointer;
+  line-height: 1;
+}
+.trash-btn:hover { background: #fecaca; }
+
+.mini-label { font-size: 11px; color: var(--muted); font-weight: 600; }
+.mini-label input { margin-top: 3px; }
+
+/* Dokunmatik cihazlar için ok tuşları (sürükle-bırak masaüstünde) */
+.nudge-btns { display: none; }
+@media (max-width: 900px) {
+  .drag-handle { display: none; }
+  .nudge-btns { display: flex; flex-direction: column; gap: 2px; }
+  .nudge-btns button {
+    border: 1px solid var(--border); background: #fff; border-radius: 6px;
+    font-size: 10px; padding: 3px 7px; cursor: pointer; color: var(--muted);
+  }
+  .pos-row { grid-template-columns: 30px auto 1fr auto; }
+  .pos-row .pos-cell:nth-of-type(3), .pos-row .pos-cell:nth-of-type(4) { display: none; }
+  .pos-row.editing { grid-template-columns: 40px 1fr auto; }
+  .pos-row.editing .pos-cell { display: none; }
+}

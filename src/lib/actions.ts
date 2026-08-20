@@ -721,3 +721,23 @@ export async function updateRolePermissionsAction(fd: FormData) {
   refresh();
   done(back, "Rol yetkileri kaydedildi. Değişiklikler kullanıcıların bir sonraki sayfa yüklemesinde geçerli olur.");
 }
+
+// Sürükle-bırak pozisyon sıralaması: görsel sıradaki id listesi kaydedilir.
+// Programatik çağrıldığı için yönlendirme yapmaz, sonuç döndürür.
+export async function reorderPositionsAction(ids: number[]) {
+  const s = await getSession();
+  if (!s) return { ok: false, error: "Oturum bulunamadı." };
+  const perms = await getPermSet(s.role);
+  if (!perms.has("islem_tanim")) return { ok: false, error: "Bu işlem için yetkiniz yok." };
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 500) {
+    return { ok: false, error: "Geçersiz sıralama." };
+  }
+  for (let i = 0; i < ids.length; i++) {
+    const id = Number(ids[i]);
+    if (!Number.isInteger(id)) continue;
+    await prisma.position.update({ where: { id }, data: { sortOrder: i + 1 } }).catch(() => {});
+  }
+  await audit(s, "TANIM", "Pozisyon sıralaması sürükle-bırak ile güncellendi.");
+  refresh();
+  return { ok: true };
+}
