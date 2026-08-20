@@ -2,6 +2,9 @@
   "name": "kecetakip",
   "version": "2.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "description": "Kâğıt fabrikası Elek & Keçe Takip Yönetim Sistemi",
   "scripts": {
     "dev": "next dev",

@@ -95,10 +95,40 @@ pozisyon/ürün tipi üzerinden ölçeklenebilir tasarlandı.
 
 ## Dağıtım (internet üzerinden erişim)
 
-Uygulama standart bir Next.js uygulamasıdır; `output: "standalone"` ile derlenir.
-Bir VPS'te `npm run build && npm start` + nginx/Caddy ters vekil (HTTPS) arkasında,
-ya da Vercel/Railway/Render gibi platformlarda `DATABASE_URL`'i yönetilen bir
-PostgreSQL'e (Neon, Supabase, RDS...) yönlendirerek yayınlanabilir. Böylece her
-bilgisayar, tablet ve telefondan aynı verilere erişilir.
+### Railway ile yayınlama (önerilen, ~10 dakika)
+
+Depo Railway'e hazırdır (`railway.json` ilk açılışta veritabanı şemasını ve başlangıç
+verilerini otomatik kurar):
+
+1. [railway.com](https://railway.com) adresine GitHub hesabınızla giriş yapın.
+2. **New Project → Deploy from GitHub repo** deyin ve bu depoyu seçin
+   (gerekirse Railway'e depo erişim izni verin).
+3. Aynı projede **Create → Database → Add PostgreSQL** ile bir PostgreSQL servisi ekleyin.
+4. Uygulama servisinin **Variables** sekmesine iki değişken ekleyin:
+   - `DATABASE_URL` → **Add Reference** ile `Postgres.DATABASE_URL` değerini bağlayın
+   - `SESSION_SECRET` → uzun rastgele bir metin (örn. bir şifre üreticiden 40+ karakter)
+5. Uygulama servisinde **Settings → Networking → Generate Domain** ile adres alın
+   (`https://....up.railway.app`).
+6. Deploy bittiğinde adrese girin, `admin` / `admin123` ile giriş yapıp şifreyi değiştirin.
+
+Bundan sonra her `git push` otomatik olarak yeniden yayınlar. Veriler Railway'deki
+PostgreSQL'de kalıcıdır. (Railway ücretsiz deneme kredisi verir; kalıcı kullanım için
+aylık ~5 $ Hobby planı gerekir.)
+
+### Diğer seçenekler
+
+- **Vercel + Neon/Supabase (ücretsiz katman):** Vercel'e depoyu bağlayın; `DATABASE_URL`
+  olarak Neon veya Supabase'in ücretsiz PostgreSQL bağlantısını, `SESSION_SECRET`'ı da
+  ortam değişkeni olarak girin. İlk kurulumda bir kez
+  `npx prisma db push && node prisma/seed.js` çalıştırın (lokalden, DATABASE_URL'i
+  bulut veritabanına yönlendirerek).
+- **Render:** Web Service (build: `npm install && npm run build`, start: `npm start`) +
+  Render PostgreSQL; ortam değişkenleri aynı.
+- **Kendi sunucunuz / fabrika içi ağ (VPS veya yerel PC):** PostgreSQL kurun,
+  `.env`'i düzenleyin, `npm run build && npm start` ile çalıştırıp nginx/Caddy ters
+  vekil (HTTPS) arkasına alın. Yalnızca fabrika içi kullanılacaksa internete açmadan
+  yerel ağda da çalışır.
+
+Hepsinde sonuç aynıdır: her bilgisayar, tablet ve telefondan aynı verilere erişilir.
 
 > Eski Flask/SQLite sürümü `legacy/` klasöründe saklanmaktadır.
